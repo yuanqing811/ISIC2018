@@ -114,7 +114,7 @@ if __name__ == '__main__':
     n_samples_train = x_train.shape[0]
     n_samples_valid = x_valid.shape[0]
 
-    debug_visualize = True
+    debug_visualize = False
 
     if debug_visualize:
 

@@ -65,18 +65,19 @@ if __name__ == '__main__':
 
     model = backbone(backbone_name).segmentation_model(load_from=run_name, lr=0.001)
 
-    max_num_images = 16 #x.shape[0]
+    # max_num_images = 32
+    max_num_images = x.shape[0]
     x = x[:max_num_images]
     y_true = y_true[:max_num_images]
 
-    y_pred = model.predict(x[:max_num_images], batch_size=8)
+    y_pred = model.predict(x, batch_size=8)
 
     if task_idx == 1:
         y_pred = task1_post_process(y_prediction=y_pred, threshold=0.5, gauss_sigma=2.)
         mean_jaccard, thresholded_jaccard = compute_jaccard(y_true=y_true, y_pred=y_pred)
         print('Mean jaccard = %.3f, Thresholded Jaccard = %.3f ' % (mean_jaccard, thresholded_jaccard))
 
-    bv = BatchVisualization(images=x[:max_num_images],
+    bv = BatchVisualization(images=x,
                             true_masks=y_true,
                             pred_masks=y_pred)
     bv()

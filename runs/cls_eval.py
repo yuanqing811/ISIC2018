@@ -16,6 +16,11 @@ if __name__ == '__main__':
 
     model = backbone(backbone_name).classification_model(load_from=run_name)
 
+    # max_num_images = 32
+    max_num_images = x.shape[0]
+    x = x[:max_num_images]
+    y_true = y_true[:max_num_images]
+
     y_pred = model.predict(x)
 
     _ = get_confusion_matrix(y_true=y_true, y_pred=y_pred, print_cm=True)
