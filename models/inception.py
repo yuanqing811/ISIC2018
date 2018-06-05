@@ -26,7 +26,8 @@ class InceptionBackbone(Backbone):
                              num_dense_units=0,
                              dropout_rate=0.2,
                              pooling='avg',
-                             name='default_inception_classification_model', **kwargs):
+                             name='default_inception_classification_model',
+                             **kwargs):
         """ Returns a classifier model using the correct backbone.
         """
 

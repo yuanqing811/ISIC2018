@@ -1,7 +1,10 @@
 from keras import backend as K
 import tensorflow as tf
 
-
+'''
+The following code is adated from 
+https://github.com/fizyr/keras-retinanet
+'''
 def focal_loss(alpha=0.25, gamma=2.0, num_classes=1):
     def binary_focal_loss(y_true, y_pred):
         # # # filter out "ignore" anchors

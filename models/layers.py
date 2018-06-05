@@ -44,6 +44,9 @@ def resize_images(x, height_factor, width_factor, data_format):
 
 
 class UpsampleLike(keras.layers.Layer):
+    """
+    Adapted from https://github.com/fizyr/keras-retinanet
+    """
     def call(self, inputs, **kwargs):
         source, target = inputs
         source_shape = K.shape(source)

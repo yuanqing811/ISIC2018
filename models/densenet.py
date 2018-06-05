@@ -50,7 +50,8 @@ class DenseNetBackbone(Backbone):
                                                                   num_dense_units=num_dense_units,
                                                                   dropout_rate=dropout_rate,
                                                                   pooling=pooling,
-                                                                  name=name, **kwargs)
+                                                                  name=name,
+                                                                  **kwargs)
 
     def segmentation_model(self,
                            init_nb_filters=64,
