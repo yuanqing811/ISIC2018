@@ -148,7 +148,7 @@ def load_task1_training_masks(output_size=None):
     if os.path.exists(npy_filename):
         masks = np.load(npy_filename)
     else:
-        masks = load_images(image_ids=task12_image_ids[1:10],
+        masks = load_images(image_ids=task12_image_ids,
                             from_dir=task1_gt_dir,
                             output_size=output_size,
                             fname_fn=lambda x: '%s_segmentation.png' % x)
