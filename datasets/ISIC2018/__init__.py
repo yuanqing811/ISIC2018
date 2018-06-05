@@ -91,7 +91,7 @@ def load_image_by_id(image_id, fname_fn, from_dir, output_size=None):
     if len(images) == 1:
         return images[0]
     else:
-        return np.concatenate(images, axis=-1)  # masks
+        return np.stack(images, axis=-1)  # masks
 
 
 def load_images(image_ids, from_dir, output_size=None, fname_fn=None, verbose=True):
@@ -148,7 +148,7 @@ def load_task1_training_masks(output_size=None):
     if os.path.exists(npy_filename):
         masks = np.load(npy_filename)
     else:
-        masks = load_images(image_ids=task12_image_ids,
+        masks = load_images(image_ids=task12_image_ids[1:10],
                             from_dir=task1_gt_dir,
                             output_size=output_size,
                             fname_fn=lambda x: '%s_segmentation.png' % x)
@@ -173,7 +173,7 @@ def load_task2_training_masks(output_size=None):
                                                 '%s_attribute_pigment_network.png' % x,
                                                 '%s_attribute_streaks.png' % x)
                             )
-        masks = np.stack(masks, axis=0)
+        masks = np.stack(masks)
         np.save(npy_filename, masks)
 
     bg_masks = masks.max() - masks.max(axis=-1)
