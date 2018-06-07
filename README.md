@@ -32,7 +32,7 @@ Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder
 * ISIC2018_Task3_Training_GroundTruth
 * ISIC2018_Task3_Training_Input
 
-Please place supplementary ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth.
+**Place supplementary ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth.**
 
 ### Data pre-processing
 
@@ -56,11 +56,11 @@ You can visualize the data by running misc_utils/visualization_utils.py. You sho
 
 #### Solution
 
-The solution uses an encoder and a decoder in a U-NET type structure. The encoder can be one the pre-trained models such as vgg16 etc. The default network that achieves reasonable performance is vgg16.  Run the script runs/seg_train.py to train.
+The solution uses an encoder and a decoder in a U-NET type structure. The encoder can be one of the pre-trained models such as vgg16 etc. The default network that achieves reasonable performance is vgg16.  Run the script runs/seg_train.py to train.
 
 #### Task 1 results
 
-Run the script runs/seg_eval.py to evaluate the network. We get the following on the validation set of about 400 images: Mean jaccard = 0.815, Thresholded Jaccard = 0.772 where thresholded Jaccard uses a threshold 0.65 before averaging.
+Run the script runs/seg_eval.py to evaluate the network. Make sure that the configuration matches runs/seg_train.py. We get the following on the validation set of about 400 images: Mean jaccard = 0.815, Thresholded Jaccard = 0.772 where thresholded Jaccard uses a threshold 0.65 before averaging.
 
 ##### Result Visualization
 
@@ -76,11 +76,11 @@ Changing task_idx in runs/seg_train.py to 2 should start training for task 2. Ho
 
 #### Solution
 
-The solution uses transfer learning from one the pretrained models such as vgg16 etc.  The default network that trains ok is inception_v3.  Run the script runs/cls_train.py to train.
+The solution uses transfer learning from one of the pretrained models such as vgg16 etc.  The default network that trains ok is inception_v3.  Run the script runs/cls_train.py to train.
 
 ##### Task 3 results
 
-Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_eval.py.
+Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_train.py.
 
 The result below is based on training a single InceptionV3 model for 30 epochs, and is based on roughly 2000 validation images.
 
