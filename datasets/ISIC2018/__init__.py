@@ -4,6 +4,7 @@ from tqdm import tqdm
 from skimage import io
 from skimage import transform
 from paths import root_dir, mkdir_if_not_exist
+import pandas as pd
 
 ISIC2018_dir = os.path.join(root_dir, 'datasets', 'ISIC2018')
 data_dir = os.path.join(ISIC2018_dir, 'data')
@@ -48,6 +49,7 @@ if os.path.isdir(task3_img_dir):
     task3_image_ids.sort()
 
 task3_gt_fname = 'ISIC2018_Task3_Training_GroundTruth.csv'
+task3_sup_fname = 'ISIC2018_Task3_Training_LesionGroupings.csv'
 
 task12_images_npy_prefix = 'task12_images'
 task3_images_npy_prefix = 'task3_images'
@@ -78,6 +80,8 @@ def load_image_by_id(image_id, fname_fn, from_dir, output_size=None):
     images = []
     for img_fname in img_fnames:
         img_fname = os.path.join(from_dir, img_fname)
+        if not os.path.exists(img_fname):
+            raise FileNotFoundError('img %s not found' % img_fname)
         image = io.imread(img_fname)
         if output_size:
             image = transform.resize(image, (output_size, output_size),
@@ -183,19 +187,58 @@ def load_task2_training_masks(output_size=None):
 
 
 def load_task3_training_labels():
-    npy_filename = os.path.join(cached_data_dir, '%s.npy' % task3_gt_npy_prefix)
-    if os.path.exists(npy_filename):
-        labels = np.load(npy_filename)
-    else:
-        # image, MEL, NV, BCC, AKIEC, BKL, DF, VASC
-        labels = []
-        with open(os.path.join(task3_gt_dir, task3_gt_fname), 'r') as f:
-            for i, line in tqdm(enumerate(f.readlines()[1:])):
-                fields = line.strip().split(',')
-                labels.append([eval(field) for field in fields[1:]])
+    # image, MEL, NV, BCC, AKIEC, BKL, DF, VASC
+    labels = []
+    with open(os.path.join(task3_gt_dir, task3_gt_fname), 'r') as f:
+        for i, line in tqdm(enumerate(f.readlines()[1:])):
+            fields = line.strip().split(',')
+            labels.append([eval(field) for field in fields[1:]])
         labels = np.stack(labels, axis=0)
-        np.save(npy_filename, labels)
     return labels
+
+
+def partition_task3_data(x, y, k=5, i=0, test_split=1./6, seed=42):
+    assert isinstance(k, int) and isinstance(i, int) and 0 <= i < k
+
+    fname = os.path.join(task3_gt_dir, task3_sup_fname)
+    assert os.path.exists(fname)
+
+    df = pd.read_csv(os.path.join(task3_gt_dir, task3_sup_fname))
+    grouped = df.groupby('lesion_id', sort=True)
+    lesion_ids = []
+    for name, group in grouped:
+        image_ids = group.image.tolist()
+        lesion_ids.append([name, image_ids])
+
+    # shuffle lesion ids
+    np.random.seed(seed)
+    n = len(lesion_ids)
+    indices = np.random.permutation(n)
+
+    image_ids = [image_id for idx in indices for image_id in lesion_ids[idx][1]]
+    n = len(image_ids)
+    n_set = int(n * (1. - test_split)) // k
+    # divide the data into (k + 1) sets, -1 is test set, [0, k) are for train and validation
+    indices = [i for i in range(k) for _ in range(n_set)] + [-1] * (n - n_set * k)
+
+    indices = list(zip(indices, image_ids))
+    indices.sort(key=lambda x: x[1])
+    indices = np.array([idx for idx, image_id in indices], dtype=np.uint)
+
+    valid_indices = (indices == i)
+    test_indices = (indices == -1)
+    train_indices = ~(valid_indices | test_indices)
+
+    x_valid = x[valid_indices]
+    y_valid = y[valid_indices]
+
+    x_train = x[train_indices]
+    y_train = y[train_indices]
+
+    x_test = x[test_indices]
+    y_test = y[test_indices]
+
+    return (x_train, y_train), (x_valid, y_valid), (x_test, y_test)
 
 
 def load_training_data(task_idx,
@@ -207,14 +250,17 @@ def load_training_data(task_idx,
     if task_idx == 1:
         x = load_task12_training_images(output_size=output_size)
         y = load_task1_training_masks(output_size=output_size)
+        return partition_data(x=x, y=y, k=num_partitions, i=idx_partition, test_split=test_split)
+
     elif task_idx == 2:
         x = load_task12_training_images(output_size=output_size)
         y = load_task2_training_masks(output_size=output_size)
+        return partition_data(x=x, y=y, k=num_partitions, i=idx_partition, test_split=test_split)
+
     else:
         x = load_task3_training_images(output_size=output_size)
         y = load_task3_training_labels()
-
-    return partition_data(x=x, y=y, k=num_partitions, i=idx_partition, test_split=test_split)
+        return partition_task3_data(x=x, y=y, k=num_partitions, i=idx_partition, test_split=test_split)
 
 
 def partition_data(x, y, k=5, i=0, test_split=1./6, seed=42):
