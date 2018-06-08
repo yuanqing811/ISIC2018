@@ -283,7 +283,7 @@ def compile_model(model, num_classes, metrics, loss, lr):
     from metrics import pixelwise_specificity
     from metrics import pixelwise_recall
 
-    from losses import focal_loss
+    from losses import focal_loss, balanced_crossentropy
 
     if isinstance(loss, str):
         if loss in {'ce', 'crossentropy'}:
@@ -291,8 +291,10 @@ def compile_model(model, num_classes, metrics, loss, lr):
                 loss = binary_crossentropy
             else:
                 loss = categorical_crossentropy
-        elif loss in {'focal', 'focal_loss'}:
+        elif loss in {'fl', 'focal', 'focal_loss'}:
             loss = focal_loss(num_classes)
+        elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
+            loss = balanced_crossentropy(alpha=0.75, num_classes=1)
         else:
             raise ValueError('unknown loss %s' % loss)
 

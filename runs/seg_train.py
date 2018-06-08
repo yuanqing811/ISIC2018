@@ -146,9 +146,10 @@ if __name__ == '__main__':
                                                                                print_model_summary=print_model_summary,
                                                                                plot_model_summary=plot_model_summary,
                                                                                lr=init_lr,
-                                                                               loss='ce',
+                                                                               loss='bce',
                                                                                metrics=metrics,
                                                                                name=model_name)
+
 
     log_variable(var_name='input_shape', var_value=x_train.shape[1:])
     log_variable(var_name='num_classes', var_value=y_train.shape[3])

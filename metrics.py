@@ -1,5 +1,6 @@
 from keras import backend as K
 
+
 def pixelwise_precision(num_classes=1):
     def binary_pixelwise_precision(y_true, y_pred):
         true_pos = K.sum(K.abs(y_true * y_pred), axis=[1, 2, 3])

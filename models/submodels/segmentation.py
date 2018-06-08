@@ -171,10 +171,10 @@ def default_decoder_model(features,
     :param scale_factor:        The rate at which the size grows
     :param upsampling_type:     Upsampling type
     :param activation:          activation of conv blocks
-    :param use_activation:      whether to use activation of output layer
-    :param include_top:         whether to use the top layer
+    :param use_activation:      whether to use activation at the output layer
+    :param include_top:         whether to include the top layer
     :param bottleneck:          add bottleneck at the output of encoder
-    :return: A keras.model.Model that predicts classes
+    :return:                    A keras.model.Model that predicts classes
     """
 
     output_size = conv_utils.normalize_tuple(output_size, 2, 'output_size')
@@ -223,11 +223,12 @@ def default_decoder_model(features,
                                   block_prefix='feature%d' % (i+1),
                                   upsampling_type=upsampling_type)([x, dst])
 
-        x = __conv_block(nb_filters=conv_utils.normalize_tuple(nb_filters,
-                                                               nb_layers_per_block[i-1],
-                                                               'nb_filters'),
-                         activation=activation,
-                         block_prefix='feature%d' % i)(x)
+        if nb_layers_per_block[i-1] > 0:
+            x = __conv_block(nb_filters=conv_utils.normalize_tuple(nb_filters,
+                                                                   nb_layers_per_block[i-1],
+                                                                   'nb_filters'),
+                             activation=activation,
+                             block_prefix='feature%d' % i)(x)
 
     if __init_nb_filters > init_nb_filters:
         x = __transition_up_block(nb_filters=init_nb_filters,
@@ -237,7 +238,7 @@ def default_decoder_model(features,
 
         x = __conv_block(nb_filters=[init_nb_filters],
                          activation=activation,
-                         block_prefix='feature%d' %(nb_features + 1))(x)
+                         block_prefix='feature%d' % (nb_features + 1))(x)
 
     if include_top:
         x = Conv2D(num_classes, (1, 1), activation='linear', name='predictions')(x)
