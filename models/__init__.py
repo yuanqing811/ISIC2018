@@ -52,9 +52,7 @@ class Backbone(object):
                              load_from=None,
                              load_model_from=None,
                              load_weights_from=None,
-                             save_to=None,
-                             lr=1e-5,
-                             ):
+                             save_to=None):
         """ Returns a classifier model using the correct backbone.
         """
         import keras
@@ -112,12 +110,6 @@ class Backbone(object):
         if save_to:
             save_model_to_run(model, save_to)
 
-        compile_model(model=model,
-                      num_classes=num_classes,
-                      metrics='acc',
-                      loss='ce',
-                      lr=lr)
-
         return model
 
     def segmentation_model(self,
@@ -125,9 +117,6 @@ class Backbone(object):
                            load_model_from=None,
                            load_weights_from=None,
                            save_to=None,
-                           lr=1e-5,
-                           loss='ce',
-                           metrics=None,
                            print_model_summary=False,
                            plot_model_summary=False,
                            input_shape=None,
@@ -225,18 +214,6 @@ class Backbone(object):
 
         if modifier:
             model = modifier(model)
-
-        if metrics is None:
-            metrics = ['acc',
-                       'jaccard_index',
-                       'pixelwise_sensitivity',
-                       'pixelwise_specificity']
-
-        compile_model(model=model,
-                      num_classes=num_classes,
-                      metrics=metrics,
-                      loss=loss,
-                      lr=lr)
 
         return model
 

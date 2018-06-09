@@ -1,5 +1,3 @@
-import keras
-
 from models.layers import SubPixelUpscaling
 from keras import backend as K
 from keras.layers import LeakyReLU

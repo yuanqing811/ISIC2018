@@ -141,15 +141,18 @@ class ValidationPrediction(Callback):
         plt.pause(3)
 
 
-def config_cls_callbacks(run_name=None):
+def config_cls_callbacks(run_name=None,
+                         reduce_lr_factor=0.25,
+                         patience=2,
+                         min_lr=1e-7):
     callbacks = [
         ValidationPrediction(show_confusion_matrix=True),
         ReduceLROnPlateau(monitor='val_loss',
-                          factor=0.25,
-                          patience=2,
+                          factor=reduce_lr_factor,
+                          patience=patience,
                           verbose=1,
                           mode='auto',
-                          min_lr=1e-7)
+                          min_lr=min_lr)
     ]
     if run_name:
         callbacks.extend([
@@ -163,15 +166,19 @@ def config_cls_callbacks(run_name=None):
     return callbacks
 
 
-def config_seg_callbacks(run_name=None):
+def config_seg_callbacks(run_name=None,
+                         reduce_lr_factor=0.5,
+                         patience=2,
+                         verbose=1,
+                         min_lr=1e-7):
     callbacks = [
         ValidationPrediction(show_confusion_matrix=False),
         ReduceLROnPlateau(monitor='val_loss',
-                          factor=0.5,
-                          patience=2,
-                          verbose=1,
+                          factor=reduce_lr_factor,
+                          patience=patience,
+                          verbose=verbose,
                           mode='auto',
-                          min_lr=1e-7),
+                          min_lr=min_lr),
     ]
     if run_name:
         callbacks.extend([

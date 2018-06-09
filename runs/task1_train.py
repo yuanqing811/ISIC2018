@@ -1,22 +1,24 @@
 if __name__ == '__main__':
     from datasets.ISIC2018 import *
-    from callback import config_seg_callbacks
     from misc_utils.print_utils import Tee, log_variable
+
     from misc_utils.filename_utils import get_log_filename
+    from misc_utils.filename_utils import get_weights_filename
+    from misc_utils.filename_utils import get_csv_filename
+
+    from keras.callbacks import ReduceLROnPlateau
+    from keras.callbacks import ModelCheckpoint
+    from keras.callbacks import CSVLogger
+
     from misc_utils.visualization_utils import BatchVisualization
     from keras.preprocessing.image import ImageDataGenerator
-    from models import backbone
+
+    from models import backbone, compile_model
     import numpy as np
     import sys
 
-    task_idx = 1
     k_fold = 0
     version = '0'
-
-    # backbone_name = 'unet'
-    # backbone_name = 'inception_v3'
-    # backbone_name = 'resnet50'
-    # backbone_name = 'densenet169'
 
     backbone_name = 'vgg16'
 
@@ -48,12 +50,16 @@ if __name__ == '__main__':
     else:
         backbone_options = {}
 
+    metrics = ['jaccard_index', 'pixelwise_sensitivity', 'pixelwise_specificity']
+    loss = 'fl'
+
     # training parameter
     batch_size = 32
     initial_epoch = 0
     epochs = 50
     init_lr = 1e-4  # Note learning rate is very important to get this to train stably
     min_lr = 1e-7
+    reduce_lr = 0.5
     patience = 1
 
     # data augmentation parameters
@@ -64,8 +70,8 @@ if __name__ == '__main__':
     width_shift_range = 0.1
     height_shift_range = 0.1
 
-    model_name = 'task%d_%s' % (task_idx, backbone_name)
-    run_name = 'task%d_%s_k%d_v%s' % (task_idx, backbone_name, k_fold, version)
+    model_name = 'task1_%s' % backbone_name
+    run_name = 'task1_%s_k%d_v%s' % (backbone_name, k_fold, version)
     from_run_name = None
 
     debug = False
@@ -76,27 +82,12 @@ if __name__ == '__main__':
     original = sys.stdout
     sys.stdout = Tee(sys.stdout, logfile)
 
-    assert task_idx in {1, 2}
-
-    if task_idx == 1:
-        metrics = ['jaccard_index',
-                   'pixelwise_sensitivity',
-                   'pixelwise_specificity']
-    else:
-        metrics = ['jaccard_index0',
-                   'jaccard_index1',
-                   'jaccard_index2',
-                   'jaccard_index3',
-                   'jaccard_index4',
-                   'jaccard_index5']
-
-    (x_train, y_train), (x_valid, y_valid), _ = load_training_data(task_idx=task_idx,
+    (x_train, y_train), (x_valid, y_valid), _ = load_training_data(task_idx=1,
                                                                    output_size=224,
                                                                    idx_partition=k_fold)
 
     # Target should be of the type N x 224 x 224 x 1
     if len(y_train.shape) == 3:
-
         y_train = y_train[..., None]
         y_valid = y_valid[..., None]
 
@@ -127,10 +118,8 @@ if __name__ == '__main__':
         bv = BatchVisualization(images=x_train, true_masks=y_train)
         bv()
 
-    callbacks = config_seg_callbacks(run_name)
-
     if from_run_name:
-        model = backbone(backbone_name).segmentation_model(load_from=from_run_name, lr=init_lr)
+        model = backbone(backbone_name).segmentation_model(load_from=from_run_name)
     else:
         model = backbone(backbone_name, **backbone_options).segmentation_model(input_shape=x_train.shape[1:],
                                                                                num_classes=y_train.shape[3],
@@ -145,11 +134,9 @@ if __name__ == '__main__':
                                                                                save_to=run_name,
                                                                                print_model_summary=print_model_summary,
                                                                                plot_model_summary=plot_model_summary,
-                                                                               lr=init_lr,
-                                                                               loss='bce',
-                                                                               metrics=metrics,
                                                                                name=model_name)
 
+    compile_model(model=model, num_classes=1, metrics=metrics, loss=loss, lr=init_lr)
 
     log_variable(var_name='input_shape', var_value=x_train.shape[1:])
     log_variable(var_name='num_classes', var_value=y_train.shape[3])
@@ -171,6 +158,8 @@ if __name__ == '__main__':
     log_variable(var_name='init_lr', var_value=init_lr)
     log_variable(var_name='min_lr', var_value=min_lr)
     log_variable(var_name='patience', var_value=patience)
+    log_variable(var_name='loss', var_value=loss)
+    log_variable(var_name='metrics', var_value=metrics)
 
     log_variable(var_name='use_data_aug', var_value=use_data_aug)
 
@@ -187,8 +176,22 @@ if __name__ == '__main__':
 
     sys.stdout.flush()  # need to make sure everything gets written to file
 
-    if use_data_aug:
+    callbacks = [
+        ReduceLROnPlateau(monitor='val_loss',
+                          factor=reduce_lr,
+                          patience=patience,
+                          verbose=1,
+                          mode='auto',
+                          min_lr=min_lr),
+        ModelCheckpoint(get_weights_filename(run_name),
+                        monitor='val_loss',
+                        save_best_only=True,
+                        save_weights_only=True,
+                        verbose=True),
+        CSVLogger(filename=get_csv_filename(run_name))
+    ]
 
+    if use_data_aug:
         data_gen_args = dict(horizontal_flip=horizontal_flip,
                              vertical_flip=vertical_flip,
                              rotation_range=rotation_angle,

@@ -1,4 +1,3 @@
-
 from scipy.ndimage.filters import gaussian_filter
 from datasets.ISIC2018 import *
 from models import backbone
@@ -7,16 +6,17 @@ from misc_utils.eval_utils import compute_jaccard
 from skimage.morphology import label as sk_label
 
 
-def task1_post_process(y_prediction, threshold=0.5, gauss_sigma=0.):
+def task1_post_process(y_pred, threshold=0.5, gauss_sigma=0.):
 
     for im_index in range(y_pred.shape[0]):
 
         # smooth image by Gaussian filtering
 
         if gauss_sigma > 0.:
-            y_prediction[im_index] = gaussian_filter(input=y_prediction[im_index], sigma=gauss_sigma)
+            y_pred[im_index] = gaussian_filter(input=y_pred[im_index],
+                                               sigma=gauss_sigma)
 
-        thresholded_image = y_prediction[im_index] > threshold
+        thresholded_image = y_pred[im_index] > threshold
 
         # find largest connected component
 
@@ -37,25 +37,23 @@ def task1_post_process(y_prediction, threshold=0.5, gauss_sigma=0.):
                 max_label_idx = label_idx
 
         if max_label_idx > -1:
-            y_prediction[im_index] = labels == max_label_idx
+            y_pred[im_index] = labels == max_label_idx
         else: # no predicted pixels found
-            y_prediction[im_index] = y_prediction[im_index] * 0
+            y_pred[im_index] = y_pred[im_index] * 0
 
-    return y_prediction
+    return y_pred
 
 
 if __name__ == '__main__':
-
     backbone_name = 'vgg16'
     # backbone_name = 'inception_v3'
     k_fold = 0
     version = '0'
-    task_idx = 1
 
-    model_name = 'task%d_%s' % (task_idx, backbone_name)
-    run_name = 'task%d_%s_k%d_v%s' % (task_idx, backbone_name, k_fold, version)
+    model_name = 'task1_%s' % backbone_name
+    run_name = 'task1_%s_k%d_v%s' % (backbone_name, k_fold, version)
 
-    _, (x, y_true), _ = load_training_data(task_idx=task_idx, output_size=224)
+    _, _, (x, y_true) = load_training_data(task_idx=1, output_size=224)
 
     if len(y_true.shape) == 3:
         y_true = y_true[..., None]
@@ -71,11 +69,9 @@ if __name__ == '__main__':
     y_true = y_true[:max_num_images]
 
     y_pred = model.predict(x, batch_size=8)
-
-    if task_idx == 1:
-        y_pred = task1_post_process(y_prediction=y_pred, threshold=0.5, gauss_sigma=2.)
-        mean_jaccard, thresholded_jaccard = compute_jaccard(y_true=y_true, y_pred=y_pred)
-        print('Mean jaccard = %.3f, Thresholded Jaccard = %.3f ' % (mean_jaccard, thresholded_jaccard))
+    y_pred = task1_post_process(y_pred=y_pred, threshold=0.5, gauss_sigma=2.)
+    mean_jaccard, thresholded_jaccard = compute_jaccard(y_true=y_true, y_pred=y_pred)
+    print('Mean jaccard = %.3f, Thresholded Jaccard = %.3f ' % (mean_jaccard, thresholded_jaccard))
 
     bv = BatchVisualization(images=x,
                             true_masks=y_true,
