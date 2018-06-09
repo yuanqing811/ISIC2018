@@ -269,9 +269,9 @@ def compile_model(model, num_classes, metrics, loss, lr):
             else:
                 loss = categorical_crossentropy
         elif loss in {'fl', 'focal', 'focal_loss'}:
-            loss = focal_loss(num_classes)
+            loss = focal_loss(alpha=0.5, gamma=2.0, num_classes=num_classes)
         elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
-            loss = balanced_crossentropy(alpha=0.75, num_classes=1)
+            loss = balanced_crossentropy(alpha=0.99, num_classes=1)
         else:
             raise ValueError('unknown loss %s' % loss)
 

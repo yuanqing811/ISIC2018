@@ -59,13 +59,21 @@ task2_labels = ['globules',
                 'milia_like_cyst',
                 'negative_network',
                 'pigment_network',
-                'streaks.png']
+                'streaks']
 
 ATTRIBUTE_GLOBULES = 1
 ATTRIBUTE_MILIA_LIKE_CYST = 2
 ATTRIBUTE_NEGATIVE_NETWORK = 3
 ATTRIBUTE_PIGMENT_NETWORK = 4
 ATTRIBUTE_STREAKS = 5
+
+ATTRIBUTES = {
+    'GLOBULES': 1,
+    'MILIA_LIKE_CYST': 2,
+    'NEGATIVE_NETWORK': 3,
+    'PIGMENT_NETWORK': 4,
+    'STREAKS': 5,
+}
 
 
 def load_image_by_id(image_id, fname_fn, from_dir, output_size=None):

@@ -212,7 +212,7 @@ if __name__ == "__main__":
 
     k_fold = 0
 
-    for task_idx in range(1, 4):
+    for task_idx in range(2, 3):
 
         (x_train, y_train), _, _ = load_training_data(task_idx=task_idx,
                                                       output_size=224,
