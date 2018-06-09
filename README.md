@@ -9,8 +9,8 @@ This repository provides a starting solution for ISIC-2018 challenge based on Ke
 
 | Task 1        | Task 2           | Task 3  |
 | ------------- |:-------------:| -----:|
-| 81.5% mean Jaccard      | W.I.P. | 88 % accuracy |
-| 77.2% thresholded Jaccard      |       |  76% mean recall |
+| 81.5% mean Jaccard      | W.I.P. | 83 % accuracy |
+| 77.2% thresholded Jaccard      |       |  68.5% mean recall |
 
 We support most of the backbones supported by Keras (Inception, Densenet, VGG etc.). For the segementation problems, we additionally support using Keras pre-trained backbones in a U-Net type structure. 
 
@@ -31,8 +31,6 @@ Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder
 * ISIC2018_Task2_Training_GroundTruth_v3
 * ISIC2018_Task3_Training_GroundTruth
 * ISIC2018_Task3_Training_Input
-
-**Place supplementary ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth.**
 
 ### Data pre-processing
 
@@ -56,11 +54,11 @@ You can visualize the data by running misc_utils/visualization_utils.py. You sho
 
 #### Solution
 
-The solution uses an encoder and a decoder in a U-NET type structure. The encoder can be one of the pre-trained models such as vgg16 etc. The default network that achieves reasonable performance is vgg16.  Run the script runs/seg_train.py to train.
+The solution uses an encoder and a decoder in a U-NET type structure. The encoder can be one the pretrained models such as vgg16 etc. The default network that trains ok is vgg16.  Run the script runs/seg_train.py to train.
 
 #### Task 1 results
 
-Run the script runs/seg_eval.py to evaluate the network. Make sure that the configuration matches runs/seg_train.py. We get the following on the validation set of about 400 images: Mean jaccard = 0.815, Thresholded Jaccard = 0.772 where thresholded Jaccard uses a threshold 0.65 before averaging.
+Run the script runs/seg_eval.py to evaluate the network. We get the following on the validation set of about 400 images: Mean jaccard = 0.815, Thresholded Jaccard = 0.772 where thresholded Jaccard uses a threshold 0.65 before averaging.
 
 ##### Result Visualization
 
@@ -76,33 +74,34 @@ Changing task_idx in runs/seg_train.py to 2 should start training for task 2. Ho
 
 #### Solution
 
-The solution uses transfer learning from one of the pretrained models such as vgg16 etc.  The default network that trains ok is inception_v3.  Run the script runs/cls_train.py to train.
+The solution uses transfer learning from one the pretrained models such as vgg16 etc.  The default network that trains ok is inception_v3.  Run the script runs/cls_train.py to train.
 
 ##### Task 3 results
 
-Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_train.py.
+**Update - lesion ID based training/validation split has been added. This reduces the balanced accuracy to 68.5% from  76%.**
+
+Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_eval.py.
 
 The result below is based on training a single InceptionV3 model for 30 epochs, and is based on roughly 2000 validation images.
 
 ##### Confusion Matrix:
-
 | True\Pred|        MEL|         NV|        BCC|      AKIEC|        BKL|         DF|       VASC|      TOTAL|
 |   -------|    -------|    -------|    -------|    -------|    -------|    -------|    -------|    -------|
-|       MEL|       0.67|       0.22|       0.00|       0.00|       0.10|       0.00|       0.00|        204|
-|        NV|       0.02|       0.95|       0.00|       0.00|       0.02|       0.00|       0.00|       1339|
-|       BCC|       0.01|       0.09|       0.75|       0.02|       0.11|       0.02|       0.00|         93|
-|     AKIEC|       0.08|       0.01|       0.07|       0.54|       0.29|       0.00|       0.00|         83|
-|       BKL|       0.03|       0.08|       0.00|       0.00|       0.89|       0.00|       0.00|        234|
-|        DF|       0.18|       0.05|       0.00|       0.05|       0.09|       0.64|       0.00|         22|
-|      VASC|       0.00|       0.07|       0.00|       0.00|       0.00|       0.04|       0.89|         28|
-|     TOTAL|        186|       1350|         80|         48|        292|         20|         27|           |
+|       MEL|       0.58|       0.34|       0.01|       0.00|       0.06|       0.00|       0.00|        231|
+|        NV|       0.05|       0.93|       0.01|       0.00|       0.02|       0.00|       0.00|       1324|
+|       BCC|       0.07|       0.15|       0.63|       0.11|       0.03|       0.01|       0.00|         89|
+|     AKIEC|       0.07|       0.10|       0.04|       0.55|       0.22|       0.00|       0.00|         67|
+|       BKL|       0.08|       0.10|       0.02|       0.00|       0.79|       0.00|       0.00|        240|
+|        DF|       0.17|       0.00|       0.00|       0.11|       0.06|       0.67|       0.00|         18|
+|      VASC|       0.12|       0.12|       0.00|       0.00|       0.12|       0.00|       0.65|         34|
+|     TOTAL|        233|       1352|         74|         53|        253|         16|         22|           |
 
 ##### Precision/Recall:
 
 |          |        MEL|         NV|        BCC|      AKIEC|        BKL|         DF|       VASC|       MEAN|
 |   -------|    -------|    -------|    -------|    -------|    -------|    -------|    -------|    -------|
-| precision|      0.731|      0.944|      0.875|      0.938|      0.716|      0.700|      0.926|      0.833|
-|    recall|      0.667|      0.952|      0.753|      0.542|      0.893|      0.636|      0.893|      0.762|
+| precision|      0.575|      0.907|      0.757|      0.698|      0.751|      0.750|      1.000|      0.777|
+|    recall|      0.580|      0.926|      0.629|      0.552|      0.792|      0.667|      0.647|      0.685|
 
 ##### Result Visualization
 
