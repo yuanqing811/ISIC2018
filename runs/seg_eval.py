@@ -55,7 +55,7 @@ if __name__ == '__main__':
     model_name = 'task%d_%s' % (task_idx, backbone_name)
     run_name = 'task%d_%s_k%d_v%s' % (task_idx, backbone_name, k_fold, version)
 
-    _, (x, y_true), _ = load_training_data(task_idx=task_idx, output_size=224)
+    _, _, (x, y_true) = load_training_data(task_idx=task_idx, output_size=224)
 
     if len(y_true.shape) == 3:
         y_true = y_true[..., None]
@@ -77,10 +77,10 @@ if __name__ == '__main__':
         mean_jaccard, thresholded_jaccard = compute_jaccard(y_true=y_true, y_pred=y_pred)
         print('Mean jaccard = %.3f, Thresholded Jaccard = %.3f ' % (mean_jaccard, thresholded_jaccard))
 
-    bv = BatchVisualization(images=x,
-                            true_masks=y_true,
-                            pred_masks=y_pred)
-    bv()
+    # bv = BatchVisualization(images=x,
+    #                         true_masks=y_true,
+    #                         pred_masks=y_pred)
+    # bv()
 
     # scores = model.evaluate(x, y_true, batch_size=32, verbose=1)
     # print(scores)

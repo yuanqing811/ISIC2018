@@ -9,7 +9,7 @@ if __name__ == '__main__':
     import numpy as np
     import sys
 
-    task_idx = 1
+    task_idx = 2
     k_fold = 0
     version = '0'
 
@@ -52,8 +52,8 @@ if __name__ == '__main__':
     batch_size = 32
     initial_epoch = 0
     epochs = 50
-    init_lr = 1e-4  # Note learning rate is very important to get this to train stably
-    min_lr = 1e-7
+    init_lr = 5e-7  # Note learning rate is very important to get this to train stably
+    min_lr = 1e-10
     patience = 1
 
     # data augmentation parameters
@@ -83,16 +83,23 @@ if __name__ == '__main__':
                    'pixelwise_sensitivity',
                    'pixelwise_specificity']
     else:
-        metrics = ['jaccard_index0',
-                   'jaccard_index1',
-                   'jaccard_index2',
-                   'jaccard_index3',
-                   'jaccard_index4',
-                   'jaccard_index5']
+        metrics = ['jaccard_index',
+                   'pixelwise_sensitivity',
+                   'pixelwise_specificity']
+
+        # metrics = ['jaccard_index0',
+        #            'jaccard_index1',
+        #            'jaccard_index2',
+        #            'jaccard_index3',
+        #            'jaccard_index4',
+        #            'jaccard_index5']
 
     (x_train, y_train), (x_valid, y_valid), _ = load_training_data(task_idx=task_idx,
                                                                    output_size=224,
                                                                    idx_partition=k_fold)
+
+    y_train = y_train[..., [1]]
+    y_valid = y_valid[..., [1]]
 
     # Target should be of the type N x 224 x 224 x 1
     if len(y_train.shape) == 3:
@@ -146,10 +153,9 @@ if __name__ == '__main__':
                                                                                print_model_summary=print_model_summary,
                                                                                plot_model_summary=plot_model_summary,
                                                                                lr=init_lr,
-                                                                               loss='bce',
+                                                                               loss='fl',
                                                                                metrics=metrics,
                                                                                name=model_name)
-
 
     log_variable(var_name='input_shape', var_value=x_train.shape[1:])
     log_variable(var_name='num_classes', var_value=y_train.shape[3])
@@ -161,7 +167,7 @@ if __name__ == '__main__':
     log_variable(var_name='max_nb_filters', var_value=max_nb_filters)
     log_variable(var_name='encoder_activation', var_value=encoder_activation)
     log_variable(var_name='decoder_activation', var_value=decoder_activation)
-    log_variable(var_name='batch_normalization', var_value=batch_normalization)
+    log_variable(var_name='batch_norma lization', var_value=batch_normalization)
     log_variable(var_name='use_activation', var_value=use_activation)
     log_variable(var_name='use_soft_mask', var_value=use_soft_mask)
 
