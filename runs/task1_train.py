@@ -13,7 +13,8 @@ if __name__ == '__main__':
     from misc_utils.visualization_utils import BatchVisualization
     from keras.preprocessing.image import ImageDataGenerator
 
-    from models import backbone, compile_model
+    from models import backbone
+    from misc_utils.model_utils import compile_model
     import numpy as np
     import sys
 
@@ -136,8 +137,6 @@ if __name__ == '__main__':
                                                                                plot_model_summary=plot_model_summary,
                                                                                name=model_name)
 
-    compile_model(model=model, num_classes=1, metrics=metrics, loss=loss, lr=init_lr)
-
     log_variable(var_name='input_shape', var_value=x_train.shape[1:])
     log_variable(var_name='num_classes', var_value=y_train.shape[3])
     log_variable(var_name='upsampling_type', var_value=upsampling_type)
@@ -161,10 +160,8 @@ if __name__ == '__main__':
     log_variable(var_name='loss', var_value=loss)
     log_variable(var_name='metrics', var_value=metrics)
 
-    log_variable(var_name='use_data_aug', var_value=use_data_aug)
-
     if use_data_aug:
-
+        log_variable(var_name='use_data_aug', var_value=use_data_aug)
         log_variable(var_name='horizontal_flip', var_value=horizontal_flip)
         log_variable(var_name='vertical_flip', var_value=vertical_flip)
         log_variable(var_name='width_shift_range', var_value=width_shift_range)
@@ -175,6 +172,8 @@ if __name__ == '__main__':
     log_variable(var_name='n_samples_valid', var_value=n_samples_valid)
 
     sys.stdout.flush()  # need to make sure everything gets written to file
+
+    compile_model(model=model, num_classes=1, metrics=metrics, loss=loss, lr=init_lr)
 
     callbacks = [
         ReduceLROnPlateau(monitor='val_loss',

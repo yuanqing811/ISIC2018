@@ -1,23 +1,19 @@
 if __name__ == '__main__':
     from datasets.ISIC2018 import *
     from misc_utils.print_utils import Tee, log_variable
-    from misc_utils.filename_utils import get_log_filename,\
-                                          get_weights_filename,\
-                                          get_csv_filename
+    from misc_utils.filename_utils import get_log_filename
+    from misc_utils.filename_utils import get_weights_filename
+    from misc_utils.filename_utils import get_csv_filename
     from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, CSVLogger
     from misc_utils.visualization_utils import BatchVisualization
     from keras.preprocessing.image import ImageDataGenerator
     from models import backbone
+    from misc_utils.model_utils import compile_model
     import numpy as np
     import sys
 
     k_fold = 0
     version = '0'
-
-    # backbone_name = 'unet'
-    # backbone_name = 'inception_v3'
-    # backbone_name = 'resnet50'
-    # backbone_name = 'densenet169'
 
     backbone_name = 'vgg16'
 
@@ -36,7 +32,7 @@ if __name__ == '__main__':
     use_activation = True
     use_soft_mask = False
 
-    if backbone_name == 'unet':
+    if backbone_name == 'unet': # no pretrained network
         backbone_options = {
             'nb_blocks': nb_blocks,
             'init_nb_filters': init_nb_filters,
@@ -78,6 +74,7 @@ if __name__ == '__main__':
     original = sys.stdout
     sys.stdout = Tee(sys.stdout, logfile)
 
+    loss = 'fl'
     metrics = ['jaccard_index0',
                'jaccard_index1',
                'jaccard_index2',
@@ -174,6 +171,8 @@ if __name__ == '__main__':
     log_variable(var_name='n_samples_valid', var_value=n_samples_valid)
 
     sys.stdout.flush()  # need to make sure everything gets written to file
+
+    compile_model(model=model, num_classes=1, metrics=metrics, loss=loss, lr=init_lr)
 
     callbacks = [
         ReduceLROnPlateau(monitor='val_loss',

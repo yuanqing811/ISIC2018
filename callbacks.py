@@ -1,9 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from keras.callbacks import Callback, ModelCheckpoint, ReduceLROnPlateau, CSVLogger
+from keras.callbacks import Callback
 from keras.utils.vis_utils import plot_model
 from misc_utils.eval_utils import get_confusion_matrix, get_precision_recall
-from misc_utils.filename_utils import get_weights_filename, get_csv_filename
 
 plt.ion()
 
@@ -139,54 +138,3 @@ class ValidationPrediction(Callback):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
         plt.pause(3)
-
-
-def config_cls_callbacks(run_name=None,
-                         reduce_lr_factor=0.25,
-                         patience=2,
-                         min_lr=1e-7):
-    callbacks = [
-        ValidationPrediction(show_confusion_matrix=True),
-        ReduceLROnPlateau(monitor='val_loss',
-                          factor=reduce_lr_factor,
-                          patience=patience,
-                          verbose=1,
-                          mode='auto',
-                          min_lr=min_lr)
-    ]
-    if run_name:
-        callbacks.extend([
-            ModelCheckpoint(get_weights_filename(run_name),
-                            monitor='val_loss',
-                            save_best_only=True,
-                            save_weights_only=True,
-                            verbose=True),
-            CSVLogger(filename=get_csv_filename(run_name))
-        ])
-    return callbacks
-
-
-def config_seg_callbacks(run_name=None,
-                         reduce_lr_factor=0.5,
-                         patience=2,
-                         verbose=1,
-                         min_lr=1e-7):
-    callbacks = [
-        ValidationPrediction(show_confusion_matrix=False),
-        ReduceLROnPlateau(monitor='val_loss',
-                          factor=reduce_lr_factor,
-                          patience=patience,
-                          verbose=verbose,
-                          mode='auto',
-                          min_lr=min_lr),
-    ]
-    if run_name:
-        callbacks.extend([
-            ModelCheckpoint(get_weights_filename(run_name),
-                            monitor='val_loss',
-                            save_best_only=True,
-                            save_weights_only=True,
-                            verbose=True),
-            CSVLogger(filename=get_csv_filename(run_name))
-        ])
-    return callbacks

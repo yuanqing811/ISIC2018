@@ -1,7 +1,8 @@
 
 if __name__ == '__main__':
     from datasets.ISIC2018 import *
-    from models import backbone, compile_model
+    from models import backbone
+    from misc_utils.model_utils import compile_model
     from callbacks import ValidationPrediction
     from misc_utils.eval_utils import compute_class_weights
     from misc_utils.print_utils import log_variable, Tee
