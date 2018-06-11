@@ -75,7 +75,7 @@ def focal_loss(alpha=0.25, gamma=2.0, num_classes=1):
         focal_weight = tf.where(fg, 1. - y_pred, y_pred)
         focal_weight = alpha_factor * focal_weight ** gamma
 
-        loss = focal_weight * K.categorical_crossentropy(y_true, y_pred)
+        loss = focal_weight * K.binary_crossentropy(y_true, y_pred)
         normalizer = tf.count_nonzero(fg, axis=[1, 2], dtype=tf.float32)
         loss = K.sum(loss, axis=[1, 2])/K.clip(normalizer, 1, None)
         return K.mean(loss)

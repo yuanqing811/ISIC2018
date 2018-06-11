@@ -52,9 +52,7 @@ class Backbone(object):
                              load_from=None,
                              load_model_from=None,
                              load_weights_from=None,
-                             save_to=None,
-                             lr=1e-5,
-                             ):
+                             save_to=None):
         """ Returns a classifier model using the correct backbone.
         """
         import keras
@@ -112,12 +110,6 @@ class Backbone(object):
         if save_to:
             save_model_to_run(model, save_to)
 
-        compile_model(model=model,
-                      num_classes=num_classes,
-                      metrics='acc',
-                      loss='ce',
-                      lr=lr)
-
         return model
 
     def segmentation_model(self,
@@ -125,9 +117,6 @@ class Backbone(object):
                            load_model_from=None,
                            load_weights_from=None,
                            save_to=None,
-                           lr=1e-5,
-                           loss='ce',
-                           metrics=None,
                            print_model_summary=False,
                            plot_model_summary=False,
                            input_shape=None,
@@ -226,18 +215,6 @@ class Backbone(object):
         if modifier:
             model = modifier(model)
 
-        if metrics is None:
-            metrics = ['acc',
-                       'jaccard_index',
-                       'pixelwise_sensitivity',
-                       'pixelwise_specificity']
-
-        compile_model(model=model,
-                      num_classes=num_classes,
-                      metrics=metrics,
-                      loss=loss,
-                      lr=lr)
-
         return model
 
     def validate(self):
@@ -265,75 +242,4 @@ def backbone(backbone_name, **kwargs):
 
     return b(backbone_name, **kwargs)
 
-
-def compile_model(model, num_classes, metrics, loss, lr):
-    from keras.losses import binary_crossentropy
-    from keras.losses import categorical_crossentropy
-
-    from keras.metrics import binary_accuracy
-    from keras.metrics import categorical_accuracy
-
-    from keras.optimizers import Adam
-
-    from metrics import dice_coeff
-    from metrics import jaccard_index
-    from metrics import class_jaccard_index
-    from metrics import pixelwise_precision
-    from metrics import pixelwise_sensitivity
-    from metrics import pixelwise_specificity
-    from metrics import pixelwise_recall
-
-    from losses import focal_loss, balanced_crossentropy
-
-    if isinstance(loss, str):
-        if loss in {'ce', 'crossentropy'}:
-            if num_classes == 1:
-                loss = binary_crossentropy
-            else:
-                loss = categorical_crossentropy
-        elif loss in {'fl', 'focal', 'focal_loss'}:
-            loss = focal_loss(alpha=0.5, gamma=2.0, num_classes=num_classes)
-        elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
-            loss = balanced_crossentropy(alpha=0.99, num_classes=1)
-        else:
-            raise ValueError('unknown loss %s' % loss)
-
-    if isinstance(metrics, str):
-        metrics = [metrics, ]
-
-    for i, metric in enumerate(metrics):
-        if not isinstance(metric, str):
-            continue
-        elif metric == 'acc':
-            metrics[i] = binary_accuracy if num_classes == 1 else categorical_accuracy
-        elif metric == 'jaccard_index':
-            metrics[i] = jaccard_index(num_classes)
-        elif metric == 'jaccard_index0':
-            metrics[i] = class_jaccard_index(0)
-        elif metric == 'jaccard_index1':
-            metrics[i] = class_jaccard_index(1)
-        elif metric == 'jaccard_index2':
-            metrics[i] = class_jaccard_index(2)
-        elif metric == 'jaccard_index3':
-            metrics[i] = class_jaccard_index(3)
-        elif metric == 'jaccard_index4':
-            metrics[i] = class_jaccard_index(4)
-        elif metric == 'jaccard_index5':
-            metrics[i] = class_jaccard_index(5)
-        elif metric == 'dice_coeff':
-            metrics[i] = dice_coeff(num_classes)
-        elif metric == 'pixelwise_precision':
-            metrics[i] = pixelwise_precision(num_classes)
-        elif metric == 'pixelwise_sensitivity':
-            metrics[i] = pixelwise_sensitivity(num_classes)
-        elif metric == 'pixelwise_specificity':
-            metrics[i] = pixelwise_specificity(num_classes)
-        elif metric == 'pixelwise_recall':
-            metrics[i] = pixelwise_recall(num_classes)
-        else:
-            raise ValueError('metric %s not recognized' % metric)
-
-    model.compile(optimizer=Adam(lr=lr),
-                  loss=loss,
-                  metrics=metrics)
 

@@ -1,14 +1,16 @@
 
 if __name__ == '__main__':
-
     from datasets.ISIC2018 import *
     from models import backbone
-    from callback import config_cls_callbacks
+    from misc_utils.model_utils import compile_model
+    from callbacks import ValidationPrediction
     from misc_utils.eval_utils import compute_class_weights
     from misc_utils.print_utils import log_variable, Tee
-    from misc_utils.filename_utils import get_log_filename
+    from misc_utils.filename_utils import get_log_filename, \
+        get_weights_filename, get_csv_filename
     from misc_utils.visualization_utils import BatchVisualization
     from keras.preprocessing.image import ImageDataGenerator
+    from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, CSVLogger
     import sys
 
     # backbone_name = 'vgg16'
@@ -26,14 +28,17 @@ if __name__ == '__main__':
     # Training related params
     dense_layer_regularizer = 'L1'
     class_wt_type = 'ones'
-    lr = 1e-4
+    init_lr = 1e-4
+    min_lr = 1e-7
+    reduce_lr = 0.25
+    patience = 2
 
     k_fold = 0
     version = '0'
 
     run_name = 'task3_' + backbone_name + '_k' + str(k_fold) + '_v' + version
     # Set prev_run_name to continue training from a previous run
-    prev_run_name = None
+    from_run_name = None
 
     logfile = open(get_log_filename(run_name=run_name), 'w+')
     original = sys.stdout
@@ -46,7 +51,6 @@ if __name__ == '__main__':
     debug_visualize = False
 
     if debug_visualize:
-
         x_train = x_train[:32]
         y_train = y_train[:32]
 
@@ -58,21 +62,27 @@ if __name__ == '__main__':
 
     num_classes = y_train.shape[1]
 
-    callbacks = config_cls_callbacks(run_name)
+    if from_run_name:
+        model = backbone(backbone_name).segmentation_model(load_from=from_run_name)
+    else:
+        model = backbone(backbone_name, **backbone_options).classification_model(
+            input_shape=x_train.shape[1:],
+            num_classes=num_classes,
+            num_dense_layers=num_dense_layers,
+            num_dense_units=num_dense_units,
+            pooling=pooling,
+            dropout_rate=dropout_rate,
+            kernel_regularizer=dense_layer_regularizer,
+            save_to=run_name,
+            load_from=from_run_name,
+            print_model_summary=True,
+            plot_model_summary=False)
 
-    model = backbone(backbone_name, **backbone_options).classification_model(
-        input_shape=x_train.shape[1:],
-        num_classes=num_classes,
-        num_dense_layers=num_dense_layers,
-        num_dense_units=num_dense_units,
-        pooling=pooling,
-        dropout_rate=dropout_rate,
-        kernel_regularizer=dense_layer_regularizer,
-        save_to=run_name,
-        load_from=prev_run_name,
-        print_model_summary=True,
-        plot_model_summary=False,
-        lr=lr)
+    compile_model(model=model,
+                  num_classes=1,
+                  metrics='acc',
+                  loss='ce',
+                  lr=init_lr)
 
     n_samples_train = x_train.shape[0]
     n_samples_valid = x_valid.shape[0]
@@ -94,7 +104,7 @@ if __name__ == '__main__':
     log_variable(var_name='class_wt_type', var_value=class_wt_type)
     log_variable(var_name='dense_layer_regularizer', var_value=dense_layer_regularizer)
     log_variable(var_name='class_wt_type', var_value=class_wt_type)
-    log_variable(var_name='learning_rate', var_value=lr)
+    log_variable(var_name='learning_rate', var_value=init_lr)
     log_variable(var_name='batch_size', var_value=batch_size)
 
     log_variable(var_name='use_data_aug', var_value=use_data_aug)
@@ -112,8 +122,23 @@ if __name__ == '__main__':
 
     sys.stdout.flush()  # need to make sure everything gets written to file
 
-    if use_data_aug:
+    callbacks = [
+        ValidationPrediction(show_confusion_matrix=True),
+        ReduceLROnPlateau(monitor='val_loss',
+                          factor=reduce_lr,
+                          patience=patience,
+                          verbose=1,
+                          mode='auto',
+                          min_lr=min_lr),
+        ModelCheckpoint(get_weights_filename(run_name),
+                        monitor='val_loss',
+                        save_best_only=True,
+                        save_weights_only=True,
+                        verbose=True),
+        CSVLogger(filename=get_csv_filename(run_name))
+    ]
 
+    if use_data_aug:
         datagen = ImageDataGenerator(rotation_range=rotation_angle,
                                      horizontal_flip=horizontal_flip,
                                      vertical_flip=vertical_flip,
@@ -131,7 +156,6 @@ if __name__ == '__main__':
                             use_multiprocessing=True)
 
     else:
-
         model.fit(x=x_train,
                   y=y_train,
                   batch_size=batch_size,
