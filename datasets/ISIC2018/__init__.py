@@ -1,4 +1,5 @@
 import os
+import cv2
 import numpy as np
 from tqdm import tqdm
 from skimage import io
@@ -58,11 +59,7 @@ task1_gt_npy_prefix = 'task1_masks'
 task2_gt_npy_prefix = 'task2_masks'
 task3_gt_npy_prefix = 'task3_labels'
 
-task2_labels = ['globules',
-                'milia_like_cyst',
-                'negative_network',
-                'pigment_network',
-                'streaks']
+TASK2_ATTRIBUTE_NAMES = ['globules', 'milia_like_cyst', 'negative_network', 'pigment_network', 'streaks']
 
 ATTRIBUTE_GLOBULES = 1
 ATTRIBUTE_MILIA_LIKE_CYST = 2
@@ -79,7 +76,8 @@ ATTRIBUTES = {
 }
 
 
-def load_image_by_id(image_id, fname_fn, from_dir, output_size=None, save_resized=False, to_dir=None):
+def load_image_by_id(image_id, fname_fn, from_dir,
+                     output_size=None, save_resized=False, to_dir=None):
     img_fnames = fname_fn(image_id)
     if isinstance(img_fnames, str):
         img_fnames = [img_fnames, ]
@@ -94,7 +92,8 @@ def load_image_by_id(image_id, fname_fn, from_dir, output_size=None, save_resize
         image = io.imread(img_path_in)
 
         if output_size:
-            image = transform.resize(image, (output_size, output_size),
+            image = transform.resize(image,
+                                     (output_size, output_size),
                                      order=1, mode='constant',
                                      cval=0, clip=True,
                                      preserve_range=True,
@@ -178,28 +177,29 @@ def load_task1_training_masks(output_size=None):
     return masks
 
 
-def load_task2_training_masks(output_size=None):
+def load_task2_training_masks(output_size=None,
+                              attribute_names=None,
+                              load_from_cache=True):
     suffix = '' if output_size is None else '_%d' % output_size
-    npy_filename = os.path.join(cached_data_dir, 'task2_masks%s.npy' % suffix)
 
-    if os.path.exists(npy_filename):
+    if attribute_names is None:
+        attribute_names = TASK2_ATTRIBUTE_NAMES
+
+    npy_filename = os.path.join(cached_data_dir, 'task2_masks%s.npy' % suffix)
+    if load_from_cache and os.path.exists(npy_filename):
         masks = np.load(npy_filename)
     else:
         masks = load_images(image_ids=task12_image_ids,
                             from_dir=task2_gt_dir,
                             output_size=output_size,
-                            fname_fn=lambda x: ('%s_attribute_globules.png' % x,
-                                                '%s_attribute_milia_like_cyst.png' % x,
-                                                '%s_attribute_negative_network.png' % x,
-                                                '%s_attribute_pigment_network.png' % x,
-                                                '%s_attribute_streaks.png' % x)
+                            fname_fn=lambda x: ['%s_attribute_%s.png' % (x, attr_name) for attr_name in attribute_names]
                             )
         masks = np.stack(masks, axis=0)
         np.save(npy_filename, masks)
 
-    bg_masks = masks.max() - masks.max(axis=-1)
-    bg_masks = bg_masks[..., None]
-    masks = np.concatenate([bg_masks, masks], axis=-1)
+    # bg_masks = masks.max() - masks.max(axis=-1)
+    # bg_masks = bg_masks[..., None]
+    # masks = np.concatenate([bg_masks, masks], axis=-1)
     return masks
 
 
@@ -298,7 +298,6 @@ def partition_indices(n, k=5, i=0, test_split=1. / 6, seed=42):
     valid_indices = (indices == i)
     test_indices = (indices == -1)
     train_indices = ~(valid_indices | test_indices)
-
     return train_indices, valid_indices, test_indices
 
 
@@ -320,31 +319,28 @@ def partition_data(x, y, k=5, i=0, test_split=1. / 6, seed=42):
     return (x_train, y_train), (x_valid, y_valid), (x_test, y_test)
 
 
-def get_task12_resize_img_dir(output_size=None):
+def get_task12_resized_img_dir(output_size=None):
+    return os.path.join(cached_data_dir, '%s_resize_%d' % (task12_img, output_size))
 
-    task12_img_dir_resized = task12_img_dir.replace('datasets/ISIC2018/data', 'datasets/ISIC2018/cache') \
-                             + '_resize_' + str(output_size)
 
-    task1_gt_dir_resized = task1_gt_dir.replace('datasets/ISIC2018/data', 'datasets/ISIC2018/cache') \
-                           + '_resize_' + str(output_size)
+def get_task2_resized_gt_dir(output_size=None):
+    return os.path.join(cached_data_dir, '%s_resize_%d' % (task2_gt, output_size))
 
-    task2_gt_dir_resized = task2_gt_dir.replace('datasets/ISIC2018/data', 'datasets/ISIC2018/cache') \
-                           + '_resize_' + str(output_size)
 
-    return task12_img_dir_resized, task1_gt_dir_resized, task2_gt_dir_resized
+def get_task1_resized_gt_dir(output_size=None):
+    return os.path.join(cached_data_dir, '%s_resize_%d' % (task1_gt, output_size))
 
 
 def resize_and_save_task12(output_size=None):
-
-    task12_img_dir_resized, task1_gt_dir_resized, task2_gt_dir_resized = get_task12_resize_img_dir(
-        output_size=output_size)
+    task12_img_dir_resized = get_task12_resized_img_dir(output_size)
+    task1_gt_dir_resized = get_task1_resized_gt_dir(output_size)
+    task2_gt_dir_resized = get_task2_resized_gt_dir(output_size)
 
     mkdir_if_not_exist([task12_img_dir_resized, task1_gt_dir_resized, task2_gt_dir_resized])
 
     image_id_list = task12_image_ids.copy()
 
     for image_id in tqdm(image_id_list):
-
         _ = load_image_by_id(image_id,
                              from_dir=task12_img_dir,
                              output_size=output_size,

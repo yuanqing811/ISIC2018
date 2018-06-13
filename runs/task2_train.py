@@ -1,21 +1,24 @@
 if __name__ == '__main__':
-    from datasets.ISIC2018 import *
+    from datasets.ISIC2018.data_generators import Task2DataGenerator
     from misc_utils.print_utils import Tee, log_variable
     from misc_utils.filename_utils import get_log_filename
     from misc_utils.filename_utils import get_weights_filename
     from misc_utils.filename_utils import get_csv_filename
     from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, CSVLogger
     from misc_utils.visualization_utils import BatchVisualization
-    from keras.preprocessing.image import ImageDataGenerator
     from models import backbone
     from misc_utils.model_utils import compile_model
     import numpy as np
     import sys
 
+    input_shape = (1024, 1024, 3)
+    num_classes = 1
+    backbone_name = 'vgg16'
     k_fold = 0
     version = '0'
-
-    backbone_name = 'vgg16'
+    model_name = 'task2_%s' % backbone_name
+    run_name = 'task2_%s_k%d_v%s' % (backbone_name, k_fold, version)
+    from_run_name = None
 
     # Network architecture
     upsampling_type = 'deconv'
@@ -53,18 +56,22 @@ if __name__ == '__main__':
     min_lr = 1e-7
     reduce_lr = 0.5
     patience = 2
+    loss = 'fl'
+    metrics = ['jaccard_index', ]
 
     # data augmentation parameters
-    use_data_aug = True
     horizontal_flip = True
     vertical_flip = True
-    rotation_angle = 180
+    rotation_angle = 45.
     width_shift_range = 0.1
     height_shift_range = 0.1
+    data_gen_args = dict(horizontal_flip=horizontal_flip,
+                         vertical_flip=vertical_flip,
+                         rotation_range=rotation_angle,
+                         width_shift_range=width_shift_range,
+                         height_shift_range=height_shift_range)
 
-    model_name = 'task2_%s' % backbone_name
-    run_name = 'task2_%s_k%d_v%s' % (backbone_name, k_fold, version)
-    from_run_name = None
+    data_gen = Task2DataGenerator(**data_gen_args)
 
     debug = False
     print_model_summary = True
@@ -74,56 +81,11 @@ if __name__ == '__main__':
     original = sys.stdout
     sys.stdout = Tee(sys.stdout, logfile)
 
-    loss = 'fl'
-    metrics = ['jaccard_index0',
-               'jaccard_index1',
-               'jaccard_index2',
-               'jaccard_index3',
-               'jaccard_index4',
-               'jaccard_index5']
-
-    (x_train, y_train), (x_valid, y_valid), _ = load_training_data(task_idx=2,
-                                                                   output_size=224,
-                                                                   idx_partition=k_fold)
-
-    # Target should be of the type N x 224 x 224 x 1
-    if len(y_train.shape) == 3:
-
-        y_train = y_train[..., None]
-        y_valid = y_valid[..., None]
-
-    if y_train[0].max() > 1:
-        if use_soft_mask:
-            y_train = y_train / 255.
-            y_valid = y_valid / 255.
-        else:
-            y_train = (y_train > 127.5).astype(np.uint8)
-            y_valid = (y_valid > 127.5).astype(np.uint8)
-    else:
-        y_train = y_train.astype(np.uint8)
-        y_valid = y_valid.astype(np.uint8)
-
-    n_samples_train = x_train.shape[0]
-    n_samples_valid = x_valid.shape[0]
-
-    debug_visualize = False
-
-    if debug_visualize:
-
-        x_train = x_train[:32]
-        y_train = y_train[:32]
-
-        x_valid = x_valid[:32]
-        y_valid = y_valid[:32]
-
-        bv = BatchVisualization(images=x_train, true_masks=y_train)
-        bv()
-
     if from_run_name:
         model = backbone(backbone_name).segmentation_model(load_from=from_run_name)
     else:
-        model = backbone(backbone_name, **backbone_options).segmentation_model(input_shape=x_train.shape[1:],
-                                                                               num_classes=y_train.shape[3],
+        model = backbone(backbone_name, **backbone_options).segmentation_model(input_shape=input_shape,
+                                                                               num_classes=1,
                                                                                upsampling_type=upsampling_type,
                                                                                bottleneck=bottleneck,
                                                                                init_nb_filters=init_nb_filters,
@@ -137,8 +99,8 @@ if __name__ == '__main__':
                                                                                plot_model_summary=plot_model_summary,
                                                                                name=model_name)
 
-    log_variable(var_name='input_shape', var_value=x_train.shape[1:])
-    log_variable(var_name='num_classes', var_value=y_train.shape[3])
+    log_variable(var_name='input_shape', var_value=input_shape)
+    log_variable(var_name='num_classes', var_value=num_classes)
     log_variable(var_name='upsampling_type', var_value=upsampling_type)
     log_variable(var_name='bottleneck', var_value=bottleneck)
     log_variable(var_name='init_nb_filters', var_value=init_nb_filters)
@@ -158,17 +120,14 @@ if __name__ == '__main__':
     log_variable(var_name='min_lr', var_value=min_lr)
     log_variable(var_name='patience', var_value=patience)
 
-    log_variable(var_name='use_data_aug', var_value=use_data_aug)
+    log_variable(var_name='horizontal_flip', var_value=horizontal_flip)
+    log_variable(var_name='vertical_flip', var_value=vertical_flip)
+    log_variable(var_name='width_shift_range', var_value=width_shift_range)
+    log_variable(var_name='height_shift_range', var_value=height_shift_range)
+    log_variable(var_name='rotation_angle', var_value=rotation_angle)
 
-    if use_data_aug:
-        log_variable(var_name='horizontal_flip', var_value=horizontal_flip)
-        log_variable(var_name='vertical_flip', var_value=vertical_flip)
-        log_variable(var_name='width_shift_range', var_value=width_shift_range)
-        log_variable(var_name='height_shift_range', var_value=height_shift_range)
-        log_variable(var_name='rotation_angle', var_value=rotation_angle)
-
-    log_variable(var_name='n_samples_train', var_value=n_samples_train)
-    log_variable(var_name='n_samples_valid', var_value=n_samples_valid)
+    log_variable(var_name='n_samples_train', var_value=data_gen.num_training_samples)
+    log_variable(var_name='n_samples_valid', var_value=data_gen.num_validation_samples)
 
     sys.stdout.flush()  # need to make sure everything gets written to file
 
@@ -189,43 +148,17 @@ if __name__ == '__main__':
         CSVLogger(filename=get_csv_filename(run_name))
     ]
 
-    if use_data_aug:
-        data_gen_args = dict(horizontal_flip=horizontal_flip,
-                             vertical_flip=vertical_flip,
-                             rotation_range=rotation_angle,
-                             width_shift_range=width_shift_range,
-                             height_shift_range=height_shift_range)
-
-        image_datagen = ImageDataGenerator(**data_gen_args)
-        mask_datagen = ImageDataGenerator(**data_gen_args)
-
-        seed = 42
-
-        image_datagen.fit(x_train, augment=True, seed=seed)
-        mask_datagen.fit(y_train, augment=True, seed=seed)
-
-        image_generator = image_datagen.flow(x=x_train, batch_size=batch_size, seed=seed)
-        mask_generator = mask_datagen.flow(x=y_train, batch_size=batch_size, seed=seed)
-
-        train_generator = zip(image_generator, mask_generator)
-
-        model.fit_generator(generator=train_generator,
-                            steps_per_epoch=n_samples_train // batch_size,
-                            epochs=epochs,
-                            initial_epoch=initial_epoch,
-                            verbose=1,
-                            validation_data=(x_valid, y_valid),
-                            callbacks=callbacks,
-                            workers=8,
-                            use_multiprocessing=False)
-    else:
-        model.fit(x=x_train,
-                  y=y_train,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  verbose=1,
-                  validation_data=(x_valid, y_valid),
-                  shuffle=True,
-                  callbacks=callbacks)
+    model.fit_generator(generator=data_gen.flow(subset='training',
+                                                batch_size=batch_size),
+                        steps_per_epoch=data_gen.num_training_samples // batch_size,
+                        epochs=epochs,
+                        initial_epoch=initial_epoch,
+                        verbose=1,
+                        validation_data=data_gen.flow(subset='validation',
+                                                      batch_size=batch_size),
+                        validation_steps=data_gen.num_validation_samples // batch_size,
+                        callbacks=callbacks,
+                        workers=8,
+                        use_multiprocessing=False)
 
     sys.stdout = original

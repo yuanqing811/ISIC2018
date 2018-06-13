@@ -134,12 +134,13 @@ class Backbone(object):
                            activation='relu',
                            use_activation=True,
                            include_top=True,
-                           prior_probability=0.5,
+                           prior_probability=0.01,
                            name='default_segmentation_model'):
         """
         Returns a segmentation model using the correct backbone
         """
         import keras
+        from initializers import PriorProbability
         from models.submodels.segmentation import default_decoder_model
         from misc_utils.model_utils import plot_model
         from misc_utils.model_utils import load_model_from_run
@@ -194,10 +195,14 @@ class Backbone(object):
                 outputs = submodel(backbone_features)
 
             if include_top:
-                outputs = keras.layers.Conv2D(num_classes, (1, 1), activation='linear', name='predictions')(outputs)
+                outputs = keras.layers.Conv2D(num_classes, (1, 1),
+                                              activation='linear',
+                                              kernel_initializer=PriorProbability(probability=prior_probability),
+                                              name='predictions')(outputs)
                 if use_activation:
                     output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
-                    outputs = keras.layers.Activation(output_activation, name='outputs')(outputs)
+                    outputs = keras.layers.Activation(output_activation,
+                                                      name='outputs')(outputs)
 
             model = keras.models.Model(inputs=inputs, outputs=outputs, name=name)
             if load_weights_from:
