@@ -10,18 +10,14 @@ from keras.layers import Conv2DTranspose
 from keras.utils import conv_utils
 from misc_utils.model_utils import name_or_none
 
+from initializers import PriorProbability
+
 
 def __conv_block(nb_filters,
                  activation='relu',
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
                  block_prefix=None):
-
-    options = {
-        'kernel_size': 3,
-        'strides': 1,
-        'padding': 'same',
-        # 'kernel_initializer': kernel_initializer,
-        # 'bias_initializer': bias_initializer,
-    }
 
     nb_layers_per_block = 1 if isinstance(nb_filters, int) else len(nb_filters)
     nb_filters = conv_utils.normalize_tuple(nb_filters, nb_layers_per_block, 'nb_filters')
@@ -29,8 +25,12 @@ def __conv_block(nb_filters,
     def block(x):
         for i, n in enumerate(nb_filters):
             x = Conv2D(filters=nb_filters[i],
-                       name=name_or_none(block_prefix, '_conv%d' % (i+1)),
-                       **options)(x)
+                       kernel_size=(3, 3),
+                       strides=(1, 1),
+                       padding='same',
+                       kernel_initializer=kernel_initializer,
+                       bias_initializer=bias_initializer,
+                       name=name_or_none(block_prefix, '_conv%d' % (i+1)))(x)
 
             if activation.lower() == 'leakyrelu':
                 x = LeakyReLU(alpha=0.33)(x)
@@ -43,6 +43,8 @@ def __conv_block(nb_filters,
 def __transition_up_block(nb_filters,
                           merge_size,
                           upsampling_type='deconv',
+                          kernel_initializer='glorot_uniform',
+                          bias_initializer='zeros',
                           block_prefix=None):
     """Adds an upsampling block. Upsampling operation relies on the the type parameter.
 
@@ -69,10 +71,6 @@ def __transition_up_block(nb_filters,
     # Returns
         a keras tensor
     """
-    options = {
-        'padding': 'same'
-    }
-
     if upsampling_type not in {'upsample', 'subpixel', 'deconv'}:
         raise ValueError('upsampling_type must be in  {`upsample`, `subpixel`, `deconv`}: %s' % str(upsampling_type))
 
@@ -103,17 +101,32 @@ def __transition_up_block(nb_filters,
         if upsampling_type == 'upsample':
             x = UpSampling2D(size=scale_factor,
                              name=name_or_none(block_prefix, '_upsampling'))(src)
-            x = Conv2D(nb_filters, (2, 2),
-                       activation='relu', padding='same', name=name_or_none(block_prefix, '_conv'))(x)
+            x = Conv2D(nb_filters,
+                       kernel_size=(2, 2),
+                       padding='same',
+                       activation='relu',
+                       kernel_initializer=kernel_initializer,
+                       bias_initializer=bias_initializer,
+                       name=name_or_none(block_prefix, '_conv'))(x)
         elif upsampling_type == 'subpixel':
-            x = Conv2D(nb_filters, (2, 2),
-                       activation='relu', padding='same', name=name_or_none(block_prefix, '_conv'))(src)
+            x = Conv2D(nb_filters,
+                       kernel_size=(2, 2),
+                       padding='same',
+                       activation='relu',
+                       kernel_initializer=kernel_initializer,
+                       bias_initializer=bias_initializer,
+                       name=name_or_none(block_prefix, '_conv'))(src)
             x = SubPixelUpscaling(scale_factor=scale_factor,
                                   name=name_or_none(block_prefix, '_subpixel'))(x)
         else:
-            x = Conv2DTranspose(nb_filters, (2, 2), strides=scale_factor,
-                                name=name_or_none(block_prefix, '_deconv'),
-                                **options)(src)
+            x = Conv2DTranspose(nb_filters,
+                                kernel_size=(2, 2),
+                                strides=scale_factor,
+                                activation='relu',
+                                padding='same',
+                                kernel_initializer=kernel_initializer,
+                                bias_initializer=bias_initializer,
+                                name=name_or_none(block_prefix, '_deconv'))(src)
 
         if src_height * scale_factor[0] > target_height or src_width * scale_factor[1] > target_width:
             height_padding, width_padding = (src_height - target_height) // 2, (src_width - target_width) // 2
@@ -155,6 +168,8 @@ def default_decoder_model(features,
                           max_nb_filters=512,
                           upsampling_type='deconv',
                           activation='relu',
+                          kernel_initializer='glorot_uniform',
+                          bias_initializer='zeros',
                           bottleneck=False,
                           use_activation=True,
                           include_top=True):
@@ -169,6 +184,8 @@ def default_decoder_model(features,
     :param scale_factor:        The rate at which the size grows
     :param upsampling_type:     Upsampling type
     :param activation:          activation of conv blocks
+    :param kernel_initializer:  Conv2D kernel initializer. default: 'glorot_uniform',
+    :param bias_initializer:    Conv2D bias initializer. default: 'zeros',
     :param use_activation:      whether to use activation at the output layer
     :param include_top:         whether to include the top layer
     :param bottleneck:          add bottleneck at the output of encoder
@@ -196,9 +213,11 @@ def default_decoder_model(features,
             nb_filters = int(__init_nb_filters * (growth_rate ** i))
             nb_filters = min(nb_filters, max_nb_filters)
             if feature_shape[channel] > nb_filters:
-                features[i] = Conv2D(nb_filters, 1,
-                                     padding='same',
+                features[i] = Conv2D(nb_filters, (1, 1),
                                      activation='relu',
+                                     padding='same',
+                                     kernel_initializer=kernel_initializer,
+                                     bias_initializer=bias_initializer,
                                      name='feature%d_bottleneck' % (i+1))(features[i])
 
     nb_layers_per_block = conv_utils.normalize_tuple(nb_layers_per_block, nb_features, 'nb_layers_per_block')
@@ -219,30 +238,54 @@ def default_decoder_model(features,
         x = __transition_up_block(nb_filters=nb_filters,
                                   merge_size=merge_size,
                                   block_prefix='feature%d' % (i+1),
-                                  upsampling_type=upsampling_type)([x, dst])
+                                  upsampling_type=upsampling_type,
+                                  kernel_initializer=kernel_initializer,
+                                  bias_initializer=bias_initializer
+                                  )([x, dst])
 
         if nb_layers_per_block[i-1] > 0:
             x = __conv_block(nb_filters=conv_utils.normalize_tuple(nb_filters,
                                                                    nb_layers_per_block[i-1],
                                                                    'nb_filters'),
                              activation=activation,
+                             kernel_initializer=kernel_initializer,
+                             bias_initializer=bias_initializer,
                              block_prefix='feature%d' % i)(x)
 
     if __init_nb_filters > init_nb_filters:
         x = __transition_up_block(nb_filters=init_nb_filters,
                                   merge_size=output_size,
-                                  block_prefix='decoder_block%d' % (nb_features+1),
-                                  upsampling_type=upsampling_type)(x)
+                                  upsampling_type=upsampling_type,
+                                  kernel_initializer=kernel_initializer,
+                                  bias_initializer=bias_initializer,
+                                  block_prefix='decoder_block%d' % (nb_features+1))(x)
 
         x = __conv_block(nb_filters=[init_nb_filters],
                          activation=activation,
+                         kernel_initializer=kernel_initializer,
+                         bias_initializer=bias_initializer,
                          block_prefix='feature%d' % (nb_features + 1))(x)
 
     if include_top:
-        x = Conv2D(num_classes, (1, 1), activation='linear', name='predictions')(x)
+        x = Conv2D(num_classes, (1, 1),
+                   activation='linear',
+                   padding='same',
+                   kernel_initializer=kernel_initializer,
+                   bias_initializer=bias_initializer,
+                   name='predictions')(x)
         if use_activation:
             output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
             x = Activation(output_activation, name='outputs')(x)
+
+    # if include_top:
+    #             x = Conv2D(num_classes, (1, 1),
+    #                        padding='same',
+    #                        activation='linear',
+    #                        kernel_initializer=PriorProbability(probability=prior_probability),
+    #                        name='predictions')(x)
+    #             if use_activation:
+    #                 output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
+    #                 outputs = Activation(activation=output_activation, name='outputs')(outputs)
 
     return x
 

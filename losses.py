@@ -13,17 +13,20 @@ def balanced_crossentropy(alpha=0.5, num_classes=1):
         alpha_factor = K.ones_like(y_true) * alpha
         alpha_factor = tf.where(fg, alpha_factor, 1. - alpha_factor)
         loss = alpha_factor * K.binary_crossentropy(y_true, y_pred)
+
         # compute the normalizer: the number of positive anchors
-        normalizer = tf.count_nonzero(fg, dtype=tf.float32)
-        return K.sum(loss) / K.maximum(normalizer, 1.)
+        # normalizer = tf.count_nonzero(fg, dtype=tf.float32)
+        # return K.sum(loss) / K.maximum(normalizer, 1.)
+        return K.mean(loss)
 
     def balanced_categorical_crossentropy(y_true, y_pred):
         fg = K.greater_equal(y_true, 0.5)
         alpha_factor = K.ones_like(y_true) * alpha
         alpha_factor = tf.where(fg, alpha_factor, 1. - alpha_factor)
         loss = alpha_factor * K.categorical_crossentropy(y_true, y_pred)
-        normalizer = tf.count_nonzero(fg, axis=[1, 2], dtype=tf.float32)
-        loss = K.sum(loss, axis=[1, 2])/K.maximum(normalizer, 1.)
+
+        # normalizer = tf.count_nonzero(fg, axis=[1, 2], dtype=tf.float32)
+        # return K.sum(loss, axis=[1, 2])/K.clip(normalizer, 1., None)
         return K.mean(loss)
 
     if num_classes == 1:
@@ -45,28 +48,22 @@ def focal_loss(alpha=0.25, gamma=2.0, num_classes=1):
     FL(pt) = −α_t (1 − p_t)**γ log(pt).
     """
     def binary_focal_loss(y_true, y_pred):
-        # # # filter out "ignore" anchors
-        # anchor_state = K.max(y_true, axis=2)  # -1 for ignore, 0 for background, 1+ for objects
-        # indices = tf.where(K.not_equal(anchor_state, -1))
-        # y_true = tf.gather_nd(y_true, indices)
-        # y_pred = tf.gather_nd(y_pred, indices)
-
         # compute the focal loss
         # CE(p_t) = -log(p_t)
         # FL(p_t) = -(1 - p_t) ** gamma * log(p_t)
         # if y = 1, CE(p, y) = - log(p); otherwise, CE(p, y) = -log(1-p)
 
-        alpha_factor = K.ones_like(y_true) * alpha
         fg = K.greater_equal(y_true, 0.5)
+        alpha_factor = K.ones_like(y_true) * alpha
         alpha_factor = tf.where(fg, alpha_factor, 1. - alpha_factor)
         focal_weight = tf.where(fg, 1. - y_pred, y_pred)
         focal_weight = alpha_factor * focal_weight ** gamma
-
         loss = focal_weight * K.binary_crossentropy(y_true, y_pred)
 
         # compute the normalizer: the number of positive anchors
-        normalizer = tf.count_nonzero(fg, dtype=tf.float32)
+        normalizer = tf.count_nonzero(fg, dtype=K.floatx())
         return K.sum(loss) / K.maximum(normalizer, 1.)
+        # return K.mean(loss)
 
     def categorical_focal_loss(y_true, y_pred):
         alpha_factor = K.ones_like(y_true) * alpha

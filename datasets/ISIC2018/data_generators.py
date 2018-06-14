@@ -181,15 +181,15 @@ class Task2DataGenerator(object):
                             use_multiprocessing=False)
     """
     def __init__(self,
-                 rotation_range=45.,
-                 width_shift_range=0.1,
-                 height_shift_range=0.1,
+                 rotation_range=0.,
+                 width_shift_range=0.,
+                 height_shift_range=0.,
                  brightness_range=None,
-                 shear_range=0.1,
-                 zoom_range=0.1,
+                 shear_range=0.,
+                 zoom_range=0.,
                  channel_shift_range=0.0,
-                 horizontal_flip=True,
-                 vertical_flip=True,
+                 horizontal_flip=False,
+                 vertical_flip=False,
                  image_preprocessing_function=None,
                  mask_preprocessing_function=None,
                  attribute_names=None,
@@ -199,7 +199,7 @@ class Task2DataGenerator(object):
                  verbose=False):
 
         self.verbose = verbose
-        self.data_format = data_format
+        self.data_format = data_format if data_format else K.image_data_format()
 
         self.samples = len(task12_image_ids)
 
@@ -303,8 +303,12 @@ class Task2DataGenerator(object):
 
         for batch in train_generator:
             x_batch = batch[0]
-            y_batch = batch[1:]
-            yield x_batch, np.concatenate(y_batch, axis=-1)
+            if len(batch[1:]) == 1:
+                y_batch = batch[1]
+            else:
+                y_batch = np.concatenate(batch[1:], axis=-1)
+            y_batch = (y_batch > 127.5).astype(np.float32)
+            yield x_batch, y_batch
 
 
 if __name__ == '__main__':
@@ -312,7 +316,8 @@ if __name__ == '__main__':
     from matplotlib import pyplot as plt
     plt.interactive(False)
 
-    data_gen = Task2DataGenerator(attribute_names=['globules', ])
+    attribute_names = ['pigment_network', ]
+    data_gen = Task2DataGenerator(attribute_names=attribute_names)
     count = 0
     colors = ['r', 'b', 'g', 'y', 'm']
     for x, y in data_gen.flow(batch_size=1):
@@ -322,8 +327,8 @@ if __name__ == '__main__':
             if y[0, :, :, i].max() > 0.:
                 c = ax.contour(y[0, :, :, i].astype(np.uint8),
                                [127.5, ], colors=colors[i])
-                c.collections[0].set_label(TASK2_ATTRIBUTE_NAMES[i])
+                c.collections[0].set_label(attribute_names[i])
         plt.legend(loc='upper left')
         plt.savefig('test/fig%d' % count)
-        # print('i am here')
+        print('i am here')
         count += 1

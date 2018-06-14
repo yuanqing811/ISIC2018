@@ -9,6 +9,24 @@ from misc_utils.filename_utils import get_weights_filename
 from misc_utils.filename_utils import get_model_config_filename
 from misc_utils.filename_utils import get_json_filename
 
+from metrics import dice_coeff
+from metrics import jaccard_index
+from metrics import class_jaccard_index
+from metrics import pixelwise_precision
+from metrics import pixelwise_sensitivity
+from metrics import pixelwise_specificity
+from metrics import pixelwise_recall
+
+from losses import focal_loss, balanced_crossentropy
+
+from keras.losses import binary_crossentropy
+from keras.losses import categorical_crossentropy
+
+from keras.metrics import binary_accuracy
+from keras.metrics import categorical_accuracy
+
+from keras.optimizers import Adam
+
 
 def load_model_weights_from(model, weights, skip_mismatch):
     if weights is None:
@@ -110,37 +128,7 @@ def name_or_none(prefix, name):
     return prefix + name if (prefix is not None and name is not None) else None
 
 
-def compile_model(model, num_classes, metrics, loss, lr):
-    from keras.losses import binary_crossentropy
-    from keras.losses import categorical_crossentropy
-
-    from keras.metrics import binary_accuracy
-    from keras.metrics import categorical_accuracy
-
-    from keras.optimizers import Adam
-
-    from metrics import dice_coeff
-    from metrics import jaccard_index
-    from metrics import class_jaccard_index
-    from metrics import pixelwise_precision
-    from metrics import pixelwise_sensitivity
-    from metrics import pixelwise_specificity
-    from metrics import pixelwise_recall
-
-    from losses import focal_loss, balanced_crossentropy
-
-    if isinstance(loss, str):
-        if loss in {'ce', 'crossentropy'}:
-            if num_classes == 1:
-                loss = binary_crossentropy
-            else:
-                loss = categorical_crossentropy
-        elif loss in {'fl', 'focal', 'focal_loss'}:
-            loss = focal_loss(alpha=0.5, gamma=2.0, num_classes=num_classes)
-        elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
-            loss = balanced_crossentropy(alpha=0.99, num_classes=1)
-        else:
-            raise ValueError('unknown loss %s' % loss)
+def get_model_metrics(metrics, num_classes):
 
     if isinstance(metrics, str):
         metrics = [metrics, ]
@@ -176,7 +164,31 @@ def compile_model(model, num_classes, metrics, loss, lr):
             metrics[i] = pixelwise_recall(num_classes)
         else:
             raise ValueError('metric %s not recognized' % metric)
+    return metrics
 
+
+def get_model_loss(loss, num_classes, **kwargs):
+    if isinstance(loss, str):
+        if loss in {'ce', 'crossentropy'}:
+            if num_classes == 1:
+                loss = binary_crossentropy
+            else:
+                loss = categorical_crossentropy
+        elif loss in {'fl', 'focal', 'focal_loss'}:
+            alpha = kwargs.get('alpha', 0.25)
+            gamma = kwargs.get('gamma', 2.0)
+            loss = focal_loss(alpha=alpha, gamma=gamma, num_classes=num_classes)
+        elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
+            alpha = kwargs.get('alpha', 0.75)
+            loss = balanced_crossentropy(alpha=alpha, num_classes=num_classes)
+        else:
+            raise ValueError('unknown loss %s' % loss)
+    return loss
+
+
+def compile_model(model, num_classes, metrics, loss, lr):
+    metrics = get_model_metrics(metrics, num_classes=num_classes)
+    loss = get_model_loss(loss, num_classes)
     model.compile(optimizer=Adam(lr=lr),
                   loss=loss,
                   metrics=metrics)

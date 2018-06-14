@@ -132,6 +132,8 @@ class Backbone(object):
                            bottleneck=False,
                            upsampling_type='deconv',
                            activation='relu',
+                           kernel_initializer='glorot_uniform',
+                           bias_initializer='zeros',
                            use_activation=True,
                            include_top=True,
                            prior_probability=0.01,
@@ -189,6 +191,8 @@ class Backbone(object):
                                                 upsampling_type=upsampling_type,
                                                 bottleneck=bottleneck,
                                                 activation=activation,
+                                                kernel_initializer=kernel_initializer,
+                                                bias_initializer=bias_initializer,
                                                 use_activation=use_activation,
                                                 include_top=False)
             else:
@@ -197,7 +201,9 @@ class Backbone(object):
             if include_top:
                 outputs = keras.layers.Conv2D(num_classes, (1, 1),
                                               activation='linear',
-                                              kernel_initializer=PriorProbability(probability=prior_probability),
+                                              padding='same',
+                                              kernel_initializer=keras.initializers.zeros(),
+                                              bias_initializer=PriorProbability(probability=prior_probability),
                                               name='predictions')(outputs)
                 if use_activation:
                     output_activation = 'sigmoid' if num_classes == 1 else 'softmax'

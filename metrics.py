@@ -153,16 +153,12 @@ def jaccard_index(num_classes):
         """
 
     def binary_jaccard_index(y_true, y_pred):
-        y_true = K.round(y_true)
-        y_pred = K.round(y_pred)
         intersection = K.sum(K.abs(y_true * y_pred), axis=[1, 2, 3])
         union = K.sum(K.abs(y_true) + K.abs(y_pred), axis=[1, 2, 3])
         iou = intersection / K.clip(union - intersection, K.epsilon(), None)
         return iou
 
     def categorical_jaccard_index(y_true, y_pred):
-        y_true = K.round(y_true)
-        y_pred = K.round(y_pred)
         intersection = K.abs(y_true * y_pred)
         union = K.abs(y_true) + K.abs(y_pred)
 

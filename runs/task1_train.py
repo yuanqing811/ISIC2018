@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # Network architecture
     upsampling_type = 'deconv'
-    bottleneck = True
+    bottleneck = False
     batch_normalization = False
     init_nb_filters = 32
     growth_rate = 2
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         backbone_options = {}
 
     metrics = ['jaccard_index', 'pixelwise_sensitivity', 'pixelwise_specificity']
-    loss = 'fl'
+    loss = 'ce'
 
     # training parameter
     batch_size = 32
@@ -135,6 +135,7 @@ if __name__ == '__main__':
                                                                                save_to=run_name,
                                                                                print_model_summary=print_model_summary,
                                                                                plot_model_summary=plot_model_summary,
+                                                                               prior_probability=0.5,
                                                                                name=model_name)
 
     log_variable(var_name='input_shape', var_value=x_train.shape[1:])

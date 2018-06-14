@@ -52,7 +52,7 @@ class BatchVisualization(object):
             self.nrows = fig_kwargs.get('nrows', 3)
         else:  # Mask predictions
             self.ncols = fig_kwargs.get('ncols', 1)
-            self.nrows = fig_kwargs.get('nrows', 3)
+            self.nrows = fig_kwargs.get('nrows', 1)
 
         self.batch_size = self.ncols * self.nrows
         self.start_idx = 0
