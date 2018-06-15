@@ -20,6 +20,11 @@ The code is highly configurable allowing you to change and try many aspects of t
 
 This code uses: Python 3.5, Keras 2.1.6, and TensorFlow 1.8.0. Please see the requirements file for needed packages.
 
+Please make sure that your project directory is in your PYTHONPATH. 
+
+> export PYTHONPATH="${PYTHONPATH}:yourprojectpath"
+
+
 **Note** we use the developement version of scikit-image for image resizing as it supports anti-aliasing. You can install devlopement version directly from [Github](https://github.com/scikit-image/scikit-image). Alternatively, you could change the resize function in load_image_by_id in datasets/ISIC2018/\_\_init\_\_.py to not use the anti-aliasing flag.
 
 ## Data preparation
