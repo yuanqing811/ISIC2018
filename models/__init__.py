@@ -27,7 +27,6 @@ class Backbone(object):
 
         self.backbone_name = backbone_name
         self.backbone_options = kwargs
-        self.scale_factor = 2
         self.validate()
 
     def build_base_model(self, inputs, **kwarg):
@@ -125,13 +124,13 @@ class Backbone(object):
                            submodel=None,
                            modifier=None,
                            num_classes=1,
-                           init_nb_filters=64,
-                           growth_rate=2,
-                           nb_layers_per_block=2,
-                           max_nb_filters=512,
-                           bottleneck=False,
-                           upsampling_type='deconv',
+                           blocks=None,
+                           layers_per_block=2,
                            activation='relu',
+                           dilation_rate=1,
+                           bottleneck=False,
+                           scale_factor=2,
+                           upsampling_type='deconv',
                            kernel_initializer='glorot_uniform',
                            bias_initializer='zeros',
                            use_activation=True,
@@ -142,7 +141,6 @@ class Backbone(object):
         Returns a segmentation model using the correct backbone
         """
         import keras
-        from initializers import PriorProbability
         from models.submodels.segmentation import default_decoder_model
         from misc_utils.model_utils import plot_model
         from misc_utils.model_utils import load_model_from_run
@@ -180,35 +178,23 @@ class Backbone(object):
                 backbone_features = [outputs, ]
 
             if submodel is None:
+                assert blocks is not None
                 outputs = default_decoder_model(features=backbone_features,
                                                 num_classes=num_classes,
                                                 output_size=output_size,
-                                                scale_factor=self.scale_factor,
-                                                init_nb_filters=init_nb_filters,
-                                                growth_rate=growth_rate,
-                                                nb_layers_per_block=nb_layers_per_block,
-                                                max_nb_filters=max_nb_filters,
+                                                scale_factor=scale_factor,
+                                                blocks=blocks,
+                                                layers_per_block=layers_per_block,
                                                 upsampling_type=upsampling_type,
                                                 bottleneck=bottleneck,
                                                 activation=activation,
+                                                dilation_rate=dilation_rate,
                                                 kernel_initializer=kernel_initializer,
                                                 bias_initializer=bias_initializer,
                                                 use_activation=use_activation,
-                                                include_top=False)
+                                                include_top=True)
             else:
                 outputs = submodel(backbone_features)
-
-            if include_top:
-                outputs = keras.layers.Conv2D(num_classes, (1, 1),
-                                              activation='linear',
-                                              padding='same',
-                                              kernel_initializer=keras.initializers.zeros(),
-                                              bias_initializer=PriorProbability(probability=prior_probability),
-                                              name='predictions')(outputs)
-                if use_activation:
-                    output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
-                    outputs = keras.layers.Activation(output_activation,
-                                                      name='outputs')(outputs)
 
             model = keras.models.Model(inputs=inputs, outputs=outputs, name=name)
             if load_weights_from:

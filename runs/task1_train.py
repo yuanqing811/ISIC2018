@@ -128,7 +128,7 @@ if __name__ == '__main__':
                                                                                bottleneck=bottleneck,
                                                                                init_nb_filters=init_nb_filters,
                                                                                growth_rate=growth_rate,
-                                                                               nb_layers_per_block=nb_layers_per_block,
+                                                                               layers_per_block=nb_layers_per_block,
                                                                                max_nb_filters=max_nb_filters,
                                                                                activation=decoder_activation,
                                                                                use_activation=use_activation,

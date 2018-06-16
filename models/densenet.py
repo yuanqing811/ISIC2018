@@ -54,10 +54,8 @@ class DenseNetBackbone(Backbone):
                                                                   **kwargs)
 
     def segmentation_model(self,
-                           init_nb_filters=64,
-                           growth_rate=2,
-                           nb_layers_per_block=2,
-                           max_nb_filters=512,
+                           blocks=(64, 128, 256, 512),
+                           layers_per_block=2,
                            upsampling_type='deconv',
                            name='default_densenet_segmentation_model',
                            **kwargs):
@@ -83,10 +81,8 @@ class DenseNetBackbone(Backbone):
         else:
             raise ValueError("Backbone '{}' not recognized.".format(self.backbone_name))
 
-        return super(DenseNetBackbone, self).segmentation_model(init_nb_filters=init_nb_filters,
-                                                                growth_rate=growth_rate,
-                                                                nb_layers_per_block=nb_layers_per_block,
-                                                                max_nb_filters=max_nb_filters,
+        return super(DenseNetBackbone, self).segmentation_model(blocks=blocks,
+                                                                layers_per_block=layers_per_block,
                                                                 backbone_layer_names=backbone_layer_names,
                                                                 upsampling_type=upsampling_type,
                                                                 name=name,

@@ -39,10 +39,8 @@ class InceptionBackbone(Backbone):
 
     def segmentation_model(self,
                            input_padding=37,
-                           init_nb_filters=64,
-                           growth_rate=2,
-                           nb_layers_per_block=2,
-                           max_nb_filters=512,
+                           blocks=(64, 128, 256, 512, 512),
+                           layers_per_block=2,
                            upsampling_type='deconv',
                            name='default_inception_segmentation_model',
                            **kwargs):
@@ -60,10 +58,8 @@ class InceptionBackbone(Backbone):
             raise ValueError("Backbone '{}' not recognized.".format(self.backbone_name))
 
         return super(InceptionBackbone, self).segmentation_model(input_padding=input_padding,
-                                                                 init_nb_filters=init_nb_filters,
-                                                                 growth_rate=growth_rate,
-                                                                 nb_layers_per_block=nb_layers_per_block,
-                                                                 max_nb_filters=max_nb_filters,
+                                                                 blocks=blocks,
+                                                                 layers_per_block=layers_per_block,
                                                                  upsampling_type=upsampling_type,
                                                                  backbone_layer_names=backbone_layer_names,
                                                                  name=name,

@@ -225,7 +225,7 @@ class Task2DataGenerator(object):
             shear_range=shear_range,
             zoom_range=zoom_range,
             channel_shift_range=channel_shift_range,
-            fill_mode='constant', cval=0.0)
+            fill_mode='nearest')
 
         self.mask_data_generator = ImageDataGenerator(
             preprocessing_function=mask_preprocessing_function,
@@ -330,5 +330,4 @@ if __name__ == '__main__':
                 c.collections[0].set_label(attribute_names[i])
         plt.legend(loc='upper left')
         plt.savefig('test/fig%d' % count)
-        print('i am here')
         count += 1

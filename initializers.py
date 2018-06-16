@@ -1,8 +1,3 @@
-"""
-The following code is adapted from 
-https://github.com/fizyr/keras-retinanet
-"""
-
 import keras
 
 import numpy as np
@@ -11,6 +6,9 @@ import math
 
 class PriorProbability(keras.initializers.Initializer):
     """
+    The following code is adapted from
+    https://github.com/fizyr/keras-retinanet
+
     Initializer applies a prior probability.
     """
 

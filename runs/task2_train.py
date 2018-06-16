@@ -33,43 +33,39 @@ if __name__ == '__main__':
     upsampling_type = 'deconv'
     bottleneck = False
     batch_normalization = False
-    init_nb_filters = 16
-    growth_rate = 2
-    nb_blocks = 7
-    nb_layers_per_block = 2
-    max_nb_filters = 512
+    blocks = (8, 16, 32, 64, 128, 256)
+    dilation_rate = (1, 1, 2, 2, 3, 3)
+    layers_per_block = 2
 
     encoder_activation = 'relu'
     decoder_activation = 'relu'
     use_activation = True
-    use_soft_mask = False
-    prior_probability = 0.01
-    kernel_initializer = RandomNormal(mean=0.0, stddev=0.01)
+    prior_probability = 0.1
+    kernel_initializer = RandomNormal(mean=0.0, stddev=0.1)
 
-    if backbone_name == 'unet': # no pretrained network
+    if backbone_name is 'unet':
+        # there are no pretrained net
         backbone_options = dict(
-            nb_blocks=nb_blocks,
-            init_nb_filters=init_nb_filters,
-            growth_rate=growth_rate,
-            nb_layers_per_block=nb_layers_per_block,
-            max_nb_filters=max_nb_filters,
+            blocks=blocks,
+            layers_per_block=layers_per_block,
             activation=encoder_activation,
+            dilation_rate=dilation_rate,
             batch_normalization=batch_normalization,
         )
     else:
         backbone_options = dict()
 
     # training parameter
-    batch_size = 1
+    batch_size = 4
     initial_epoch = 0
     epochs = 50
-    init_lr = 1e-4  # Note learning rate is very important to get this to train stably
+    init_lr = 1e-3  # Note learning rate is very important to get this to train stably
     min_lr = 1e-10
     reduce_lr = 0.5
     patience = 2
-    loss = 'fl'
-    alpha = 0.25
-    gamma = 2
+    loss = 'bce'
+    alpha = 0.75
+    gamma = 2.0
     metrics = ['jaccard_index', 'pixelwise_sensitivity', 'pixelwise_specificity']
 
     # data augmentation parameters
@@ -97,11 +93,10 @@ if __name__ == '__main__':
                                                                                num_classes=1,
                                                                                upsampling_type=upsampling_type,
                                                                                bottleneck=bottleneck,
-                                                                               init_nb_filters=init_nb_filters,
-                                                                               growth_rate=growth_rate,
-                                                                               nb_layers_per_block=nb_layers_per_block,
-                                                                               max_nb_filters=max_nb_filters,
+                                                                               blocks=blocks,
+                                                                               layers_per_block=layers_per_block,
                                                                                activation=decoder_activation,
+                                                                               dilation_rate=dilation_rate,
                                                                                use_activation=use_activation,
                                                                                kernel_initializer=kernel_initializer,
                                                                                prior_probability=prior_probability,
@@ -110,7 +105,7 @@ if __name__ == '__main__':
                                                                                plot_model_summary=plot_model_summary,
                                                                                name=model_name)
 
-    loss = get_model_loss(loss, num_classes, alpha=alpha, gamma=gamma)
+    loss = get_model_loss(loss, num_classes=num_classes, alpha=alpha, gamma=gamma)
     metrics = get_model_metrics(metrics, num_classes)
     model.compile(optimizer=Adam(lr=init_lr), loss=loss, metrics=metrics)
 
@@ -118,15 +113,12 @@ if __name__ == '__main__':
     log_variable(var_name='num_classes', var_value=num_classes)
     log_variable(var_name='upsampling_type', var_value=upsampling_type)
     log_variable(var_name='bottleneck', var_value=bottleneck)
-    log_variable(var_name='init_nb_filters', var_value=init_nb_filters)
-    log_variable(var_name='growth_rate', var_value=growth_rate)
-    log_variable(var_name='nb_layers_per_block', var_value=nb_layers_per_block)
-    log_variable(var_name='max_nb_filters', var_value=max_nb_filters)
+    log_variable(var_name='blocks', var_value=blocks)
+    log_variable(var_name='layers_per_block', var_value=layers_per_block)
     log_variable(var_name='encoder_activation', var_value=encoder_activation)
     log_variable(var_name='decoder_activation', var_value=decoder_activation)
     log_variable(var_name='batch_normalization', var_value=batch_normalization)
     log_variable(var_name='use_activation', var_value=use_activation)
-    log_variable(var_name='use_soft_mask', var_value=use_soft_mask)
 
     log_variable(var_name='batch_size', var_value=batch_size)
     log_variable(var_name='initial_epoch', var_value=initial_epoch)
