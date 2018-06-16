@@ -37,6 +37,8 @@ Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder
 * ISIC2018_Task3_Training_GroundTruth
 * ISIC2018_Task3_Training_Input
 
+Also, add the lesion ID file ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth. For details about lesion ID, please see the thread [here](https://forum.isic-archive.com/t/task-3-supplemental-information/430) and the actual CSV file [here]
+
 ### Data pre-processing
 
 We resize all the images to 224x224x3 size and store them in numpy file for ease/speed of processing. You can run datasets/ISIC2018/preprocess_data.py to do the pre-processing, or it will be done the first time you call a function that needs the pre-processed data. **This can take a few hours to complete.**
