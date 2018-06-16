@@ -37,7 +37,7 @@ Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder
 * ISIC2018_Task3_Training_GroundTruth
 * ISIC2018_Task3_Training_Input
 
-Also, add the lesion ID file ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth. For details about lesion ID, please see the thread [here](https://forum.isic-archive.com/t/task-3-supplemental-information/430) and the actual CSV file [here]
+**Place the lesion ID file ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth.** For details about lesion ID, please see the thread [here](https://forum.isic-archive.com/t/task-3-supplemental-information/430) and the actual CSV file [here](https://challenge.kitware.com/api/v1/file/5b0858b456357d4ff8575164/download)
 
 ### Data pre-processing
 
