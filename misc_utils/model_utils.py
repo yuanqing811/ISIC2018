@@ -17,7 +17,7 @@ from metrics import pixelwise_sensitivity
 from metrics import pixelwise_specificity
 from metrics import pixelwise_recall
 
-from losses import focal_loss, balanced_crossentropy
+from losses import focal_loss, balanced_crossentropy, f1_loss
 
 from keras.losses import binary_crossentropy
 from keras.losses import categorical_crossentropy
@@ -175,12 +175,16 @@ def get_model_loss(loss, num_classes, **kwargs):
             else:
                 loss = categorical_crossentropy
         elif loss in {'fl', 'focal', 'focal_loss'}:
-            alpha = kwargs.get('alpha', 0.25)
+            alpha = kwargs.get('alpha', 0.75)
             gamma = kwargs.get('gamma', 2.0)
             loss = focal_loss(alpha=alpha, gamma=gamma, num_classes=num_classes)
         elif loss in {'bce', 'balanced_ce', 'balanced_crossentropy'}:
             alpha = kwargs.get('alpha', 0.75)
             loss = balanced_crossentropy(alpha=alpha, num_classes=num_classes)
+        elif loss == 'dice':
+            loss = dice_coeff(num_classes=num_classes)
+        elif loss == 'f1':
+            loss = f1_loss(num_classes=num_classes)
         else:
             raise ValueError('unknown loss %s' % loss)
     return loss
