@@ -1,4 +1,5 @@
 from models.layers import SubPixelUpscaling
+from models.layers import UpsampleLike
 from keras import backend as K
 from keras.layers import LeakyReLU
 from keras.layers import Conv2D
@@ -76,8 +77,8 @@ def __transition_up_block(nb_filters,
     # Returns
         a keras tensor
     """
-    if upsampling_type not in {'upsample', 'subpixel', 'deconv'}:
-        raise ValueError('upsampling_type must be in  {`upsample`, `subpixel`, `deconv`}: %s' % str(upsampling_type))
+    if upsampling_type not in {'upsample', 'subpixel', 'deconv', 'resize'}:
+        raise ValueError('upsampling_type must be in  {`upsample`, `subpixel`, `deconv`, `resize`}: %s' % str(upsampling_type))
 
     merge_size = conv_utils.normalize_tuple(merge_size, 2, 'merge_size')
 
@@ -106,13 +107,17 @@ def __transition_up_block(nb_filters,
         if upsampling_type == 'upsample':
             x = UpSampling2D(size=scale_factor,
                              name=name_or_none(block_prefix, '_upsampling'))(src)
-            x = Conv2D(nb_filters,
-                       kernel_size=(2, 2),
-                       padding='same',
-                       activation='relu',
-                       kernel_initializer=kernel_initializer,
-                       bias_initializer=bias_initializer,
-                       name=name_or_none(block_prefix, '_conv'))(x)
+            if nb_filters > 0:
+                x = Conv2D(nb_filters,
+                           kernel_size=(2, 2),
+                           padding='same',
+                           activation='relu',
+                           kernel_initializer=kernel_initializer,
+                           bias_initializer=bias_initializer,
+                           name=name_or_none(block_prefix, '_conv'))(x)
+        elif upsampling_type == 'resize':
+            x = UpsampleLike(size=scale_factor,
+                             name=name_or_none(block_prefix, '_resize'))(src)
         elif upsampling_type == 'subpixel':
             x = Conv2D(nb_filters,
                        kernel_size=(2, 2),
@@ -250,14 +255,15 @@ def default_decoder_model(features,
                                   block_prefix='feature%d' % (i+1)
                                   )([x, dst])
 
-        x = __conv_block(filters=conv_utils.normalize_tuple(blocks[i-1],
-                                                            layers_per_block[i-1],
-                                                            'filters'),
-                         activation=activation,
-                         dilation_rate=dilation_rate[i-1],
-                         kernel_initializer=kernel_initializer,
-                         bias_initializer=bias_initializer,
-                         block_prefix='feature%d' % i)(x)
+        if layers_per_block[i-1] > 0:
+            x = __conv_block(filters=conv_utils.normalize_tuple(blocks[i-1],
+                                                                layers_per_block[i-1],
+                                                                'filters'),
+                             activation=activation,
+                             dilation_rate=dilation_rate[i-1],
+                             kernel_initializer=kernel_initializer,
+                             bias_initializer=bias_initializer,
+                             block_prefix='feature%d' % i)(x)
 
     if include_top:
         x = Conv2D(num_classes, (1, 1),

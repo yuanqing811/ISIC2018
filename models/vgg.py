@@ -72,28 +72,32 @@ class VGGBackbone(Backbone):
                            upsampling_type='deconv',
                            activation='relu',
                            dilation_rate=1,
+                           backbone_layer_names=None,
                            name='default_vgg_segmentation_model',
                            **kwargs):
 
-        if self.backbone_name == 'vgg16':
-            backbone_layer_names = ['block1_conv2',
-                                    'block2_conv2',
-                                    'block3_conv3',
-                                    'block4_conv3',
-                                    'block5_conv3']
-        elif self.backbone_name == 'vgg19':
-            backbone_layer_names = ['block1_conv2',
-                                    'block2_conv2',
-                                    'block3_conv4',
-                                    'block4_conv4',
-                                    'block5_conv4']
-        elif self.backbone_name == 'unet':
-            nb_blocks = len(blocks)
-            layers_per_block = conv_utils.normalize_tuple(layers_per_block, nb_blocks, 'layers_per_block')
-            backbone_layer_names = ['block%d_activation%d' % (i + 1, layers_per_block[i])
-                                    for i in range(nb_blocks)]
-        else:
-            raise ValueError("Backbone '{}' not recognized.".format(self.backbone_name))
+        if backbone_layer_names is None:
+            if self.backbone_name == 'vgg16':
+                backbone_layer_names = ['block1_conv2',
+                                        'block2_conv2',
+                                        'block3_conv3',
+                                        'block4_conv3',
+                                        'block5_conv3']
+            elif self.backbone_name == 'vgg19':
+                backbone_layer_names = ['block1_conv2',
+                                        'block2_conv2',
+                                        'block3_conv4',
+                                        'block4_conv4',
+                                        'block5_conv4']
+            elif self.backbone_name == 'unet':
+                nb_blocks = len(blocks)
+                layers_per_block = conv_utils.normalize_tuple(layers_per_block,
+                                                              nb_blocks,
+                                                              'layers_per_block')
+                backbone_layer_names = ['block%d_activation%d' % (i + 1, layers_per_block[i])
+                                        for i in range(nb_blocks)]
+            else:
+                raise ValueError("Backbone '{}' not recognized.".format(self.backbone_name))
 
         return super(VGGBackbone, self).segmentation_model(blocks=blocks,
                                                            layers_per_block=layers_per_block,

@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     input_shape = (1024, 1024, 3)
     num_classes = 1
-    backbone_name = 'unet'
+    backbone_name = 'vgg16'
     k_fold = 0
     version = '0'
     model_name = 'task2_%s' % backbone_name
@@ -30,12 +30,12 @@ if __name__ == '__main__':
     sys.stdout = Tee(sys.stdout, logfile)
 
     # Network architecture
-    upsampling_type = 'deconv'
+    upsampling_type = 'resize'
     bottleneck = False
     batch_normalization = False
-    blocks = (8, 16, 32, 64, 128, 256)
-    dilation_rate = (1, 1, 2, 2, 3, 3)
-    layers_per_block = 2
+    blocks = (0, 0, 0, 0, 0)
+    dilation_rate = 1
+    layers_per_block = 0
 
     encoder_activation = 'relu'
     decoder_activation = 'relu'
@@ -44,7 +44,6 @@ if __name__ == '__main__':
     kernel_initializer = RandomNormal(mean=0.0, stddev=0.1)
 
     if backbone_name is 'unet':
-        # there are no pretrained net
         backbone_options = dict(
             blocks=blocks,
             layers_per_block=layers_per_block,
@@ -63,7 +62,7 @@ if __name__ == '__main__':
     min_lr = 1e-10
     reduce_lr = 0.5
     patience = 2
-    loss = 'bce'
+    loss = 'f1'
     alpha = 0.75
     gamma = 2.0
     metrics = ['jaccard_index', 'pixelwise_sensitivity', 'pixelwise_specificity']
@@ -94,9 +93,9 @@ if __name__ == '__main__':
                                                                                upsampling_type=upsampling_type,
                                                                                bottleneck=bottleneck,
                                                                                blocks=blocks,
+                                                                               dilation_rate=1,
                                                                                layers_per_block=layers_per_block,
                                                                                activation=decoder_activation,
-                                                                               dilation_rate=dilation_rate,
                                                                                use_activation=use_activation,
                                                                                kernel_initializer=kernel_initializer,
                                                                                prior_probability=prior_probability,

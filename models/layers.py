@@ -4,64 +4,48 @@ from keras_contrib.layers import SubPixelUpscaling
 from keras import backend as K
 import numpy as np
 import tensorflow as tf
+from keras.utils import conv_utils
+from keras.engine import InputSpec
 
 
-def resize_images(x, height_factor, width_factor, data_format):
-    """Resizes the images contained in a 4D tensor.
-
-    # Arguments
-        x: Tensor or variable to resize.
-        height_factor: Positive integer.
-        width_factor: Positive integer.
-        data_format: string, `"channels_last"` or `"channels_first"`.
-
-    # Returns
-        A tensor.
-
-    # Raises
-        ValueError: if `data_format` is neither `"channels_last"` or `"channels_first"`.
+def resize_images(images, size, method='bilinear', align_corners=False):
+    """ See https://www.tensorflow.org/versions/master/api_docs/python/tf/image/resize_images .
+    Args
+        method: The method used for interpolation. One of ('bilinear', 'nearest', 'bicubic', 'area').
     """
-    if data_format == 'channels_first':
-        original_shape = K.int_shape(x)
-        new_shape = tf.shape(x)[2:]
-        new_shape *= tf.constant(np.array([height_factor, width_factor]).astype('int32'))
-        x = K.permute_dimensions(x, [0, 2, 3, 1])
-        x = tf.image.resize_nearest_neighbor(x, new_shape)
-        x = K.permute_dimensions(x, [0, 3, 1, 2])
-        x.set_shape((None, None, original_shape[2] * height_factor if original_shape[2] is not None else None,
-                     original_shape[3] * width_factor if original_shape[3] is not None else None))
-        return x
-    elif data_format == 'channels_last':
-        original_shape = K.int_shape(x)
-        new_shape = tf.shape(x)[1:3]
-        new_shape *= tf.constant(np.array([height_factor, width_factor]).astype('int32'))
-        x = tf.image.resize_nearest_neighbor(x, new_shape)
-        x.set_shape((None, original_shape[1] * height_factor if original_shape[1] is not None else None,
-                     original_shape[2] * width_factor if original_shape[2] is not None else None, None))
-        return x
-    else:
-        raise ValueError('Unknown data_format: ' + str(data_format))
+    methods = {
+        'bilinear': tf.image.ResizeMethod.BILINEAR,
+        'nearest' : tf.image.ResizeMethod.NEAREST_NEIGHBOR,
+        'bicubic' : tf.image.ResizeMethod.BICUBIC,
+        'area'    : tf.image.ResizeMethod.AREA,
+    }
+    return tf.image.resize_images(images, size, methods[method], align_corners)
 
 
 class UpsampleLike(keras.layers.Layer):
+    """ Keras layer for upsampling a Tensor to be the same shape as another Tensor.
     """
-    Adapted from https://github.com/fizyr/keras-retinanet
-    """
+    def __init__(self, size=(2, 2), data_format=None, method='bilinear', **kwargs):
+        super(UpsampleLike, self).__init__(**kwargs)
+        self.data_format = conv_utils.normalize_data_format(data_format)
+        self.size = conv_utils.normalize_tuple(size, 2, 'size')
+        self.method = method
+        self.input_spec = InputSpec(ndim=4)
+
     def call(self, inputs, **kwargs):
-        source, target = inputs
-        source_shape = K.shape(source)
-        target_shape = K.shape(target)
+        input_shape = K.get_variable_shape(inputs)
 
         if K.image_data_format() == 'channels_last':
-            source_height, source_width = source_shape[1:3]
-            target_height, target_width = target_shape[1:3]
+            src_height, src_width = input_shape[1:3]
         else:
-            source_height, source_width = source_shape[2:4]
-            target_height, target_width = target_shape[2:4]
+            src_height, src_width = input_shape[2:4]
 
-        return K.resize_images(source, target_height / source_height,
-                               target_width / source_width,
-                               K.image_data_format())
+        return resize_images(inputs, (src_height * self.size[0], src_width * self.size[1]), method=self.method)
 
     def compute_output_shape(self, input_shape):
-        return (input_shape[0][0],) + input_shape[1][1:3] + (input_shape[0][-1],)
+        if K.image_data_format() == 'channels_last':
+            src_height, src_width = input_shape[1:3]
+        else:
+            src_height, src_width = input_shape[2:4]
+
+        return (input_shape[0],) + (src_height * self.size[0], src_width * self.size[1]) + (input_shape[-1],)
