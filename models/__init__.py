@@ -194,7 +194,12 @@ class Backbone(object):
                                                 use_activation=use_activation,
                                                 include_top=True)
             else:
-                outputs = submodel(backbone_features)
+                outputs = submodel(backbone_features,
+                                   num_classes=num_classes,
+                                   output_size=output_size,
+                                   scale_factor=scale_factor,
+                                   use_activation=use_activation,
+                                   include_top=True)
 
             model = keras.models.Model(inputs=inputs, outputs=outputs, name=name)
             if load_weights_from:

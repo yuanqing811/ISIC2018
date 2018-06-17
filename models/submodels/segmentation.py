@@ -116,7 +116,7 @@ def __transition_up_block(nb_filters,
                            bias_initializer=bias_initializer,
                            name=name_or_none(block_prefix, '_conv'))(x)
         elif upsampling_type == 'resize':
-            x = UpsampleLike(size=scale_factor,
+            x = UpsampleLike(multiplier=scale_factor,
                              name=name_or_none(block_prefix, '_resize'))(src)
         elif upsampling_type == 'subpixel':
             x = Conv2D(nb_filters,
@@ -166,6 +166,44 @@ def __normalize_target_size(curr_size, target_size, scale_factor):
     while curr_size < target_size:
         target_size //= scale_factor
     return target_size
+
+
+def decoder2(features,
+             num_classes,
+             output_size,
+             scale_factor,
+             prior_probability=0.01,
+             include_top=True,
+             use_activation=True):
+
+    output_size = conv_utils.normalize_tuple(output_size, 2, 'output_size')
+
+    indices = slice(1, 3) if K.image_data_format() == 'channels_last' else slice(2, 4)
+    channel = 3 if K.image_data_format() == 'channels_last' else 1
+
+    resized = []
+    for i, x in enumerate(features):
+        feature_shape = K.get_variable_shape(x)
+        feature_size = feature_shape[indices]
+        if feature_size[0] < output_size[0] or feature_size[1] < output_size[1]:
+            x = UpsampleLike(multiplier=scale_factor,
+                             target_size=output_size,
+                             name='feature%d_resize' % i)(x)
+        resized.append(x)
+    x = Concatenate(axis=channel, name='merge')(resized)
+
+    if include_top:
+        x = Conv2D(num_classes, (1, 1),
+                   activation=None,
+                   padding='same',
+                   kernel_initializer=Zeros(),
+                   bias_initializer=PriorProbability(probability=prior_probability),
+                   name='predictions')(x)
+        if use_activation:
+            output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
+            x = Activation(output_activation, name='outputs')(x)
+
+    return x
 
 
 def default_decoder_model(features,

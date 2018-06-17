@@ -25,22 +25,35 @@ def resize_images(images, size, method='bilinear', align_corners=False):
 class UpsampleLike(keras.layers.Layer):
     """ Keras layer for upsampling a Tensor to be the same shape as another Tensor.
     """
-    def __init__(self, size=(2, 2), data_format=None, method='bilinear', **kwargs):
+    def __init__(self, multiplier=(2, 2),
+                 target_size=None,
+                 data_format=None,
+                 method='bilinear', **kwargs):
         super(UpsampleLike, self).__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
-        self.size = conv_utils.normalize_tuple(size, 2, 'size')
+        self.target_size = conv_utils.normalize_tuple(target_size, 2, 'target_size')
+        self.multiplier = conv_utils.normalize_tuple(multiplier, 2, 'multiplier')
         self.method = method
         self.input_spec = InputSpec(ndim=4)
 
     def call(self, inputs, **kwargs):
         input_shape = K.get_variable_shape(inputs)
-
         if K.image_data_format() == 'channels_last':
             src_height, src_width = input_shape[1:3]
         else:
             src_height, src_width = input_shape[2:4]
 
-        return resize_images(inputs, (src_height * self.size[0], src_width * self.size[1]), method=self.method)
+        if self.target_size is not None:
+            target_size = (src_height, src_width)
+            while target_size[0] < self.target_size[0] or \
+                    target_size[1] < self.target_size[1]:
+                target_size = (target_size[0] * self.multiplier[0],
+                               target_size[1] * self.multiplier[1])
+
+        else:
+            target_size = (src_height * self.multiplier[0], src_width * self.multiplier[1])
+
+        return resize_images(inputs, target_size, method=self.method)
 
     def compute_output_shape(self, input_shape):
         if K.image_data_format() == 'channels_last':
@@ -48,4 +61,13 @@ class UpsampleLike(keras.layers.Layer):
         else:
             src_height, src_width = input_shape[2:4]
 
-        return (input_shape[0],) + (src_height * self.size[0], src_width * self.size[1]) + (input_shape[-1],)
+        target_size = (src_height * self.multiplier[0], src_width * self.multiplier[1])
+
+        if self.target_size is not None:
+            while target_size[0] < self.target_size[0] or \
+                    target_size[1] < self.target_size[1]:
+                target_size = (target_size[0] * self.multiplier[0],
+                               target_size[1] * self.multiplier[1])
+
+        return (input_shape[0],) + target_size + (input_shape[-1],)
+
