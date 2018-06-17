@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from sklearn.utils import compute_class_weight as sk_compute_class_weight
 
-from datasets.ISIC2018 import classes, class_names
+from ISIC2018 import classes, class_names
 from misc_utils.print_utils import print_confusion_matrix, print_precision_recall
 
 

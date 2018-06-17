@@ -1,7 +1,7 @@
 
 if __name__ == '__main__':
 
-    from datasets.ISIC2018 import *
+    from ISIC2018 import *
     from models import backbone
     from callback import config_cls_callbacks
     from misc_utils.eval_utils import compute_class_weights

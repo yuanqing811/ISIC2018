@@ -115,3 +115,7 @@ model_data/
 # Pycharm files
 .idea/
 .DS_Store
+*.sln
+.vs/ISIC2018Challenge/v15/.suo
+.vscode/settings.json
+*.pyproj

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
-from datasets.ISIC2018 import class_names
+from ISIC2018 import class_names
 from matplotlib import colors
 
 

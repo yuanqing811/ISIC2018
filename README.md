@@ -22,6 +22,8 @@ This code uses: Python 3.5, Keras 2.1.6, and TensorFlow 1.8.0. Please see the re
 
 **Note** we use the developement version of scikit-image for image resizing as it supports anti-aliasing. You can install devlopement version directly from [Github](https://github.com/scikit-image/scikit-image). Alternatively, you could change the resize function in load_image_by_id in datasets/ISIC2018/\_\_init\_\_.py to not use the anti-aliasing flag.
 
+**Note** To run and modify the code in Visual Studio, use the "from existing python code" - template from the "new project" menu and add "datasets" and "datasets/ISIC2018/" to "search path" in the project view. 
+
 ## Data preparation
 
 Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder should have the following subfolders:
