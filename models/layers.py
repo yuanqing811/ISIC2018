@@ -1,6 +1,4 @@
 import keras
-from keras_contrib import backend as K
-from keras_contrib.layers import SubPixelUpscaling
 from keras import backend as K
 import numpy as np
 import tensorflow as tf

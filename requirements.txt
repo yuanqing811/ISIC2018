@@ -24,16 +24,17 @@ idna==2.6
 imageio==2.3.0
 Jinja2==2.10
 Keras==2.1.6
-keras-contrib==2.0.8
 kiwisolver==1.0.1
 locket==0.2.0
 Markdown==2.6.11
 MarkupSafe==1.0
-matplotlib==2.1.2
+matplotlib==2.2.2
+memory-profiler==0.52.0
 msgpack-python==0.5.6
 networkx==1.11
 numpy==1.14.3
 olefile==0.45.1
+opencv-python==3.4.1.15
 packaging==17.1
 pandas==0.22.0
 partd==0.3.8
@@ -41,6 +42,7 @@ Pillow==5.1.0
 protobuf==3.5.2.post1
 psutil==5.4.5
 pycparser==2.18
+pydensecrf==1.0rc2
 pydot==1.2.4
 pyOpenSSL==17.5.0
 pyparsing==2.2.0
