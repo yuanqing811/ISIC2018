@@ -87,8 +87,7 @@ def load_image_by_id(image_id, fname_fn, from_dir, output_size=None):
             image = transform.resize(image, (output_size, output_size),
                                      order=1, mode='constant',
                                      cval=0, clip=True,
-                                     preserve_range=True,
-                                     anti_aliasing=True)
+                                     preserve_range=True)
         image = image.astype(np.uint8)
         images.append(image)
 
