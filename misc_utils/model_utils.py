@@ -1,12 +1,10 @@
 import os
-import pickle
 from models import backbone
 from paths import model_data_dir
 
 import keras
 from keras.models import load_model, model_from_json
 from misc_utils.filename_utils import get_weights_filename
-from misc_utils.filename_utils import get_model_config_filename
 from misc_utils.filename_utils import get_json_filename
 
 
@@ -26,7 +24,7 @@ def load_model_weights_from(model, weights, skip_mismatch):
     raise ValueError('Unknown weights to load from!', weights, weights_path)
 
 
-def save_model_to_run(model, run_name, **model_config):
+def save_model_to_run(model, run_name):
     json_path = get_json_filename(run_name)
     h5_path = get_weights_filename(run_name)
 
@@ -34,7 +32,6 @@ def save_model_to_run(model, run_name, **model_config):
         json_file.write(model.to_json())
 
     model.save_weights(h5_path)
-    save_model_config(run_name=run_name, **model_config)
 
 
 def load_model_from_run(backbone_name,
@@ -76,21 +73,6 @@ def freeze_model(model, layers=None):
             layer.trainable = False
 
     return model
-
-
-def save_model_config(run_name, **model_config):
-    config_file = get_model_config_filename(run_name=run_name)
-    with open(config_file, 'wb') as file:
-        pickle.dump(model_config, file)
-
-
-def load_model_config(run_name):
-    config_file = get_model_config_filename(run_name=run_name)
-
-    if not os.path.isfile(config_file):
-        raise FileNotFoundError('Config file not found %s' % config_file)
-
-    return pickle.load(open(config_file, 'rb'))
 
 
 # def print_model_summary(save_to_dir, model, name):

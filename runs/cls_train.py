@@ -43,10 +43,9 @@ if __name__ == '__main__':
                                                                    output_size=224,
                                                                    idx_partition=k_fold)
 
-    debug_visualize = False
+    debug_visualize = True
 
     if debug_visualize:
-
         x_train = x_train[:32]
         y_train = y_train[:32]
 
