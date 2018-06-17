@@ -79,16 +79,24 @@ def focal_loss(alpha=0.25, gamma=2.0, num_classes=1):
         return categorical_focal_loss
 
 
-def f1_loss(num_classes=1):
+def f1_loss(num_classes=1, beta=1):
     def binary_f1_loss(y_true, y_pred):
         tp = K.sum(K.abs(y_true * y_pred))
         fp = K.sum(K.abs((1. - y_true) * y_pred))
         fn = K.sum(K.abs(y_true * (1. - y_pred)))
-        score = 2 * tp / K.clip(2 * tp + fp + fn, K.epsilon(), None)
+
+        tp = tp * (1 + beta * beta)
+        score = tp / K.clip(tp + fp + fn, K.epsilon(), None)
         return 1. - score
 
     def categorical_f1_loss(y_true, y_pred):
-        raise NotImplementedError
+        tp = K.sum(K.abs(y_true * y_pred), axis=[0, 1, 2])
+        fp = K.sum(K.abs((1. - y_true) * y_pred), axis=[0, 1, 2])
+        fn = K.sum(K.abs(y_true * (1. - y_pred)), axis=[0, 1, 2])
+        tp = tp * (1 + beta * beta)
+        score = K.mean(tp / K.clip(tp + fp + fn, K.epsilon(), None))
+        return 1. - score
+
     if num_classes == 1:
         return binary_f1_loss
     else:
