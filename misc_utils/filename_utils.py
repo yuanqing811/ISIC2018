@@ -50,9 +50,3 @@ def get_json_filename(run_name):
     return json_filename
 
 
-def get_model_config_filename(run_name):
-    dirname = get_run_dir(run_name)
-    config_filename = os.path.join(dirname, '%s.pkl' % run_name)
-    return config_filename
-
-

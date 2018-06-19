@@ -24,7 +24,6 @@ idna==2.6
 imageio==2.3.0
 Jinja2==2.10
 Keras==2.1.6
-keras-contrib==2.0.8
 kiwisolver==1.0.1
 locket==0.2.0
 Markdown==2.6.11

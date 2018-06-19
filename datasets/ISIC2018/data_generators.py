@@ -181,6 +181,7 @@ class Task2DataGenerator(object):
                             use_multiprocessing=False)
     """
     def __init__(self,
+                 target_size=1024,
                  rotation_range=0.,
                  width_shift_range=0.,
                  height_shift_range=0.,
@@ -202,7 +203,7 @@ class Task2DataGenerator(object):
         self.data_format = data_format if data_format else K.image_data_format()
 
         self.samples = len(task12_image_ids)
-
+        self.target_size = target_size
         train_indices, valid_indices, _ = partition_indices(self.samples,
                                                             k=num_partitions,
                                                             i=idx_partition,
@@ -246,7 +247,6 @@ class Task2DataGenerator(object):
             self.attribute_names = attribute_names
 
     def flow(self,
-             target_size=1024,
              batch_size=32,
              shuffle=True, seed=42,
              save_to_dir=None,
@@ -265,9 +265,9 @@ class Task2DataGenerator(object):
             image_ids = task12_image_ids
 
         image_iterator = DirectoryIterator(
-            task12_image_filename_iterator(image_ids, target_size),
+            task12_image_filename_iterator(image_ids, self.target_size),
             self.image_data_generator,
-            target_size=target_size,
+            target_size=self.target_size,
             class_mode=None,
             color_mode='rgb',
             data_format=self.data_format,
@@ -282,9 +282,9 @@ class Task2DataGenerator(object):
         attr_iterators = []
         for attribute_name in self.attribute_names:
             attr_iterator = DirectoryIterator(
-                task2_gt_filename_iterator(image_ids, attribute_name, target_size),
+                task2_gt_filename_iterator(image_ids, attribute_name, self.target_size),
                 self.mask_data_generator,
-                target_size=target_size,
+                target_size=self.target_size,
                 class_mode=None,
                 color_mode='grayscale',
                 data_format=self.data_format,

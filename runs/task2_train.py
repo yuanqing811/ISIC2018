@@ -14,10 +14,10 @@ if __name__ == '__main__':
     from keras.optimizers import Adam
     from keras.initializers import RandomNormal
     from models import backbone
-    from models.submodels.segmentation import decoder2
+    from models.submodels.decoders import decoder3
     import sys
 
-    input_shape = (1024, 1024, 3)
+    input_shape = (512, 512, 3)
     num_classes = 1
     backbone_name = 'vgg16'
     k_fold = 0
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     sys.stdout = Tee(sys.stdout, logfile)
 
     # Network architecture
-    upsampling_type = 'resize'
+    upsampling_type = 'deconv'
     bottleneck = False
     batch_normalization = False
     blocks = (0, 0, 0, 0, 0)
@@ -56,14 +56,14 @@ if __name__ == '__main__':
         backbone_options = dict()
 
     # training parameter
-    batch_size = 4
+    batch_size = 10
     initial_epoch = 0
     epochs = 50
-    init_lr = 1e-3  # Note learning rate is very important to get this to train stably
+    init_lr = 1e-4  # Note learning rate is very important to get this to train stably
     min_lr = 1e-10
     reduce_lr = 0.5
     patience = 2
-    loss = 'f1'
+    loss = 'bce'
     alpha = 0.75
     gamma = 2.0
     metrics = ['jaccard_index', 'pixelwise_sensitivity', 'pixelwise_specificity']
@@ -80,7 +80,9 @@ if __name__ == '__main__':
                          width_shift_range=width_shift_range,
                          height_shift_range=height_shift_range)
 
-    data_gen = Task2DataGenerator(attribute_names=['pigment_network', ], **data_gen_args)
+    data_gen = Task2DataGenerator(attribute_names=['pigment_network', ],
+                                  target_size=512,
+                                  **data_gen_args)
 
     debug = False
     print_model_summary = True
@@ -91,7 +93,7 @@ if __name__ == '__main__':
     else:
         model = backbone(backbone_name, **backbone_options).segmentation_model(input_shape=input_shape,
                                                                                num_classes=1,
-                                                                               submodel=decoder2,
+                                                                               submodel=decoder3,
                                                                                upsampling_type=upsampling_type,
                                                                                bottleneck=bottleneck,
                                                                                blocks=blocks,
