@@ -14,7 +14,7 @@ if __name__ == '__main__':
     from keras.optimizers import Adam
     from keras.initializers import RandomNormal
     from models import backbone
-    from models.submodels.decoders import decoder3
+    from models.submodels.decoders import decoder2
     import sys
 
     input_shape = (512, 512, 3)
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     else:
         model = backbone(backbone_name, **backbone_options).segmentation_model(input_shape=input_shape,
                                                                                num_classes=1,
-                                                                               submodel=decoder3,
+                                                                               submodel=decoder2,
                                                                                upsampling_type=upsampling_type,
                                                                                bottleneck=bottleneck,
                                                                                blocks=blocks,

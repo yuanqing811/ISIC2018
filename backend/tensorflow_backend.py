@@ -48,10 +48,10 @@ def resize_images(images, size, method='bilinear', align_corners=False):
         method: The method used for interpolation. One of ('bilinear', 'nearest', 'bicubic', 'area').
     """
     methods = {
-        'bilinear': tensorflow.image.ResizeMethod.BILINEAR,
-        'nearest' : tensorflow.image.ResizeMethod.NEAREST_NEIGHBOR,
-        'bicubic' : tensorflow.image.ResizeMethod.BICUBIC,
-        'area'    : tensorflow.image.ResizeMethod.AREA,
+        'bilinear': tf.image.ResizeMethod.BILINEAR,
+        'nearest' : tf.image.ResizeMethod.NEAREST_NEIGHBOR,
+        'bicubic' : tf.image.ResizeMethod.BICUBIC,
+        'area'    : tf.image.ResizeMethod.AREA,
     }
     return tf.image.resize_images(images, size, methods[method], align_corners)
 

@@ -191,15 +191,13 @@ class Backbone(object):
                                                 dilation_rate=dilation_rate,
                                                 kernel_initializer=kernel_initializer,
                                                 bias_initializer=bias_initializer,
-                                                use_activation=use_activation,
-                                                include_top=True)
+                                                use_activation=use_activation)
             else:
                 outputs = submodel(backbone_features,
                                    num_classes=num_classes,
                                    output_size=output_size,
                                    scale_factor=scale_factor,
-                                   use_activation=use_activation,
-                                   include_top=True)
+                                   use_activation=use_activation)
 
             model = keras.models.Model(inputs=inputs, outputs=outputs, name=name)
             if load_weights_from:

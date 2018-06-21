@@ -18,6 +18,7 @@ def decoder2(features,
              num_classes,
              output_size,
              scale_factor,
+             filters=256,
              prior_probability=0.01,
              use_activation=True):
 
@@ -31,20 +32,31 @@ def decoder2(features,
     for i, x in enumerate(features):
         feature_shape = K.get_variable_shape(x)
         feature_size = feature_shape[indices]
-        x = Conv2D(num_classes, (1, 1), padding='same', name='score')(x)
+        x = Conv2D(filters, (1, 1), padding='same', name='reduced%d' % (i+1))(x)
 
         if feature_size[0] < output_size[0] or feature_size[1] < output_size[1]:
             x = UpsampleLike(scale_factor=scale_factor,
                              target_size=output_size,
-                             name='feature%d_resize' % i)(x)
+                             name='upsampled%d' % (i+1))(x)
+
+        x = Conv2D(filters, (3, 3), padding='same', name='feature%d' % (i+1))(x)
+
         resized.append(x)
-    x = Concatenate(axis=channel, name='merge')(resized)
+
+    x = Concatenate(axis=channel, name='merged')(resized)
+
+    for i in range(4):
+        x = Conv2D(filters, kernel_size=3,
+                   strides=1, padding='same',
+                   activation='relu',
+                   name='merged%d' % (i+1))(x)
 
     x = Conv2D(num_classes, (1, 1),
                padding='same',
                kernel_initializer=Zeros(),
                bias_initializer=PriorProbability(probability=prior_probability),
-               name='predictions')(x)
+               name='score')(x)
+
     if use_activation:
         output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
         x = Activation(output_activation, name='outputs')(x)
@@ -59,7 +71,7 @@ def __transition_up_block(filters,
                           kernel_initializer=RandomNormal(mean=0.0, stddev=0.01),
                           bias_initializer='zeros',
                           block_prefix=None):
-    """Adds an upsampling block. Upsampling operation relies on the the type parameter.
+    """Adds an upsampling block. Upsampling op=eration relies on the the type parameter.
 
     # Arguments
         ip: input keras tensor
@@ -114,9 +126,8 @@ def __transition_up_block(filters,
         if upsampling_type == 'upsample':
             x = UpsampleLike(scale_factor=scale_factor,
                              name=name_or_none(block_prefix, '_upsampling'))(src)
-            x = Conv2D(filters,
-                       kernel_size=(3, 3),
-                       padding='same',
+            x = Conv2D(filters, kernel_size=3,
+                       strides=1, padding='same',
                        kernel_initializer=kernel_initializer,
                        bias_initializer=bias_initializer,
                        name=name_or_none(block_prefix, '_conv'))(x)
@@ -127,8 +138,8 @@ def __transition_up_block(filters,
                 strides=scale_factor,
                 padding='same',
                 kernel_initializer=kernel_initializer,
-                use_bias=False,
-                # bias_initializer=bias_initializer,
+                bias_initializer=bias_initializer,
+                # use_bias=False,
                 name=name_or_none(block_prefix, '_deconv')
             )(src)
 
@@ -202,3 +213,4 @@ def decoder3(features,
         output_activation = 'sigmoid' if num_classes == 1 else 'softmax'
         x = Activation(output_activation, name='outputs')(x)
     return x
+

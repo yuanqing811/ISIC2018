@@ -1,6 +1,8 @@
 from keras import Input, backend as K, Model
 from keras.engine import get_source_inputs
-from keras.layers import Conv2D, BatchNormalization, Activation, LeakyReLU, Lambda, Concatenate, MaxPooling2D
+from keras.layers import Conv2D, LeakyReLU, Lambda, Concatenate, MaxPooling2D
+from keras.layers import Activation
+from keras.layers import BatchNormalization
 from keras.utils import conv_utils
 
 from misc_utils.model_utils import name_or_none
@@ -31,7 +33,8 @@ def __conv_block(filters,
              for i in range(nb_layers)]
 
     if batch_normalization:
-        bns = [BatchNormalization(name=name_or_none(block_prefix, '_bn%d' % i)) for i in range(nb_layers)]
+        bns = [BatchNormalization(name=name_or_none(block_prefix, '_bn%d' % i))
+               for i in range(nb_layers)]
 
     if activation in {'relu', }:
         activations = [Activation(activation=activation,
