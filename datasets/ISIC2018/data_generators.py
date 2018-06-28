@@ -3,7 +3,7 @@ import numpy as np
 from keras.preprocessing.image import Iterator, load_img, img_to_array, array_to_img
 from keras.preprocessing.image import ImageDataGenerator
 from datasets.ISIC2018 import task12_image_ids
-from datasets.ISIC2018 import TASK2_ATTRIBUTE_NAMES
+from datasets.ISIC2018 import TASK2_ATTRIBUTE_NAMES, task2_image_ids
 from datasets.ISIC2018 import get_task12_resized_img_dir
 from datasets.ISIC2018 import get_task2_resized_gt_dir
 from datasets.ISIC2018 import partition_indices
@@ -123,8 +123,8 @@ class DirectoryIterator(Iterator):
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         for i, j in enumerate(index_array):
-            img = load_img(self.filenames[j],
-                           grayscale=grayscale)
+            print(self.filenames[j])
+            img = load_img(self.filenames[j], grayscale=grayscale)
             x = img_to_array(img, data_format=self.data_format)
             x = self.image_data_generator.random_transform(x)
             x = self.image_data_generator.standardize(x)
@@ -181,7 +181,7 @@ class Task2DataGenerator(object):
                             use_multiprocessing=False)
     """
     def __init__(self,
-                 target_size=1024,
+                 target_size=512,
                  rotation_range=0.,
                  width_shift_range=0.,
                  height_shift_range=0.,
@@ -202,15 +202,29 @@ class Task2DataGenerator(object):
         self.verbose = verbose
         self.data_format = data_format if data_format else K.image_data_format()
 
-        self.samples = len(task12_image_ids)
+        if attribute_names is None:
+            self.attribute_names = TASK2_ATTRIBUTE_NAMES
+            self.image_ids = task12_image_ids
+        else:
+            self.image_ids = []
+            self.attribute_names = attribute_names
+            for attribute_name in self.attribute_names:
+                assert attribute_name in TASK2_ATTRIBUTE_NAMES
+                attribute_image_ids = task2_image_ids[attribute_name]
+                self.image_ids.extend(attribute_image_ids)
+
+            if len(self.attribute_names) > 1:
+                self.image_ids.sort()
+
+        self.samples = len(self.image_ids)
         self.target_size = target_size
         train_indices, valid_indices, _ = partition_indices(self.samples,
                                                             k=num_partitions,
                                                             i=idx_partition,
                                                             test_split=0.)
 
-        self.training_image_ids = [task12_image_ids[i] for i, val in enumerate(train_indices) if val]
-        self.validation_image_ids = [task12_image_ids[i] for i, val in enumerate(valid_indices) if val]
+        self.training_image_ids = [self.image_ids[i] for i, val in enumerate(train_indices) if val]
+        self.validation_image_ids = [self.image_ids[i] for i, val in enumerate(valid_indices) if val]
 
         self.num_training_samples = len(self.training_image_ids)
         self.num_validation_samples = len(self.validation_image_ids)
@@ -239,13 +253,6 @@ class Task2DataGenerator(object):
             zoom_range=zoom_range,
             fill_mode='constant', cval=0.0)
 
-        if attribute_names is None:
-            self.attribute_names = TASK2_ATTRIBUTE_NAMES
-        else:
-            for attribute_name in attribute_names:
-                assert attribute_name in TASK2_ATTRIBUTE_NAMES
-            self.attribute_names = attribute_names
-
     def flow(self,
              batch_size=32,
              shuffle=True, seed=42,
@@ -262,7 +269,7 @@ class Task2DataGenerator(object):
         elif subset is 'training':
             image_ids = self.validation_image_ids
         else:
-            image_ids = task12_image_ids
+            image_ids = self.image_ids
 
         image_iterator = DirectoryIterator(
             task12_image_filename_iterator(image_ids, self.target_size),
@@ -314,6 +321,7 @@ class Task2DataGenerator(object):
 if __name__ == '__main__':
     print('testing Task2DataGenerator ...')
     from matplotlib import pyplot as plt
+
     plt.interactive(False)
 
     attribute_names = ['pigment_network', ]
@@ -323,11 +331,13 @@ if __name__ == '__main__':
     for x, y in data_gen.flow(batch_size=1):
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.imshow(x[0].astype(np.uint8))
-        for i in range(y[0].shape[-1]):
-            if y[0, :, :, i].max() > 0.:
-                c = ax.contour(y[0, :, :, i].astype(np.uint8),
-                               [127.5, ], colors=colors[i])
-                c.collections[0].set_label(attribute_names[i])
-        plt.legend(loc='upper left')
-        plt.savefig('test/fig%d' % count)
+        if y.any():
+            for i in range(y[0].shape[-1]):
+                if y[0, :, :, i].max() > 0.:
+                    c = ax.contour(y[0, :, :, i].astype(np.uint8),
+                                   [127.5, ], colors=colors[i])
+                    c.collections[0].set_label(attribute_names[i])
+            plt.legend(loc='upper left')
+            plt.show()
+        # plt.savefig('test/fig%d' % count)
         count += 1
