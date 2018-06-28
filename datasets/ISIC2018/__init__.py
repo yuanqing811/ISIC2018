@@ -1,5 +1,5 @@
 import os
-import cv2
+import pickle
 import numpy as np
 from tqdm import tqdm
 from skimage import io
@@ -50,6 +50,28 @@ if os.path.isdir(task3_img_dir):
 
     task3_image_ids.sort()
 
+
+def get_attribute_positive_imageids(attribute_name):
+    # load task
+    fname = os.path.join(cached_data_dir, 'task2_%s_image_ids.pkl' % attribute_name)
+    if os.path.isfile(fname):
+        with open(fname, 'rb') as f:
+            image_ids = pickle.load(f)
+    else:
+        image_ids = []
+        for image_id in tqdm(task12_image_ids):
+            img = load_image_by_id(image_id,
+                                   fname_fn=lambda x: '%s_attribute_%s.png' % (x, attribute_name),
+                                   from_dir=task2_gt_dir)
+            if np.any(img):
+                image_ids.append(image_id)
+        with open(fname, 'wb') as f:
+            pickle.dump(image_ids, f)
+    return image_ids
+
+
+TASK2_ATTRIBUTE_NAMES = ['globules', 'milia_like_cyst', 'negative_network', 'pigment_network', 'streaks']
+
 task3_gt_fname = 'ISIC2018_Task3_Training_GroundTruth.csv'
 task3_sup_fname = 'ISIC2018_Task3_Training_LesionGroupings.csv'
 
@@ -59,7 +81,6 @@ task1_gt_npy_prefix = 'task1_masks'
 task2_gt_npy_prefix = 'task2_masks'
 task3_gt_npy_prefix = 'task3_labels'
 
-TASK2_ATTRIBUTE_NAMES = ['globules', 'milia_like_cyst', 'negative_network', 'pigment_network', 'streaks']
 
 ATTRIBUTE_GLOBULES = 1
 ATTRIBUTE_MILIA_LIKE_CYST = 2
@@ -76,8 +97,7 @@ ATTRIBUTES = {
 }
 
 
-def load_image_by_id(image_id, fname_fn, from_dir,
-                     output_size=None, save_resized=False, to_dir=None):
+def load_image_by_id(image_id, fname_fn, from_dir, output_size=None, save_to_dir=None):
     img_fnames = fname_fn(image_id)
     if isinstance(img_fnames, str):
         img_fnames = [img_fnames, ]
@@ -88,7 +108,7 @@ def load_image_by_id(image_id, fname_fn, from_dir,
     for img_fname in img_fnames:
         img_path_in = os.path.join(from_dir, img_fname)
         if not os.path.exists(img_path_in):
-            raise FileNotFoundError('img %s not found' % img_fname)
+            raise FileNotFoundError('img %s not found' % img_path_in)
         image = io.imread(img_path_in)
 
         if output_size:
@@ -101,8 +121,8 @@ def load_image_by_id(image_id, fname_fn, from_dir,
 
         image = image.astype(np.uint8)
 
-        if output_size and save_resized:
-            img_path_out = os.path.join(to_dir, img_fname)
+        if output_size and save_to_dir:
+            img_path_out = os.path.join(save_to_dir, img_fname)
             im = Image.fromarray(image)
             im.save(img_path_out)
 
@@ -345,15 +365,13 @@ def resize_and_save_task12(output_size=None):
                              from_dir=task12_img_dir,
                              output_size=output_size,
                              fname_fn=lambda x: '%s.jpg' % x,
-                             save_resized=True,
-                             to_dir=task12_img_dir_resized)
+                             save_to_dir=task12_img_dir_resized)
 
         _ = load_image_by_id(image_id,
                              from_dir=task1_gt_dir,
                              output_size=output_size,
                              fname_fn=lambda x: '%s_segmentation.png' % x,
-                             save_resized=True,
-                             to_dir=task1_gt_dir_resized)
+                             save_to_dir=task1_gt_dir_resized)
 
         _ = load_image_by_id(image_id,
                              from_dir=task2_gt_dir,
@@ -363,9 +381,9 @@ def resize_and_save_task12(output_size=None):
                                                  '%s_attribute_negative_network.png' % x,
                                                  '%s_attribute_pigment_network.png' % x,
                                                  '%s_attribute_streaks.png' % x),
-                             save_resized=True,
-                             to_dir=task2_gt_dir_resized)
+                             save_to_dir=task2_gt_dir_resized)
 
 
-if __name__ == "__main__":
-    resize_and_save_task12(output_size=1024)
+task2_image_ids = {}
+for attribute_name in TASK2_ATTRIBUTE_NAMES:
+    task2_image_ids[attribute_name] = get_attribute_positive_imageids(attribute_name=attribute_name)
