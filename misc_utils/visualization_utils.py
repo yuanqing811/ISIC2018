@@ -15,7 +15,9 @@ def plot_mask(axis_in, img_in, mask_in, title_in):
             img[mask_max == mask_idx, :] = np.round(
                 np.asarray(colors.colorConverter.to_rgb(mask_colors[mask_idx])) * 255)
     else:
-        img[mask_in[:, :, 0] > 0.5, :] = np.round(np.asarray(colors.colorConverter.to_rgb('y')) * 255)
+        # img[mask_in[:, :, 0] > 0.5, :] = np.round(np.asarray(colors.colorConverter.to_rgb('y')) * 255)
+        img = mask_in[:, :, 0]
+        img[img > 0.5] = 1
 
     axis_in.imshow(img)
 

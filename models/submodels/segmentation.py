@@ -260,7 +260,6 @@ def default_decoder_model(features,
 
     if include_top:
         x = Conv2D(num_classes, (1, 1),
-                   activation=None,
                    padding='same',
                    kernel_initializer=Zeros(),
                    bias_initializer=PriorProbability(probability=prior_probability),

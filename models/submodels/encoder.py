@@ -107,9 +107,9 @@ def encoder(input_tensor=None,
 
     for i in range(nb_blocks):
         block_prefix = 'block%d' % (i+1)
-        nb_filters = conv_utils.normalize_tuple(blocks[i], layers_per_block[i], 'nb_filters')
+        filters = conv_utils.normalize_tuple(blocks[i], layers_per_block[i], 'filters')
 
-        x = __conv_block(filters=nb_filters,
+        x = __conv_block(filters=filters,
                          activation=activation,
                          dilation_rate=dilation_rate[i],
                          batch_normalization=batch_normalization,

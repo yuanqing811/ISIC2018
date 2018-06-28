@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     input_shape = (512, 512, 3)
     num_classes = 1
-    backbone_name = 'vgg16'
+    backbone_name = 'inception_v3'
     k_fold = 0
     version = '0'
     model_name = 'task2_%s' % backbone_name
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     batch_size = 10
     initial_epoch = 0
     epochs = 50
-    init_lr = 1e-4  # Note learning rate is very important to get this to train stably
+    init_lr = 1e-3  # Note learning rate is very important to get this to train stably
     min_lr = 1e-10
     reduce_lr = 0.5
     patience = 2

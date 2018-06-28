@@ -10,7 +10,7 @@ from keras.optimizers import Adam
 from keras.losses import binary_crossentropy
 
 if __name__ == '__main__':
-    backbone_name = 'unet'
+    backbone_name = 'inception_v3'
     k_fold = 0
     version = '0'
     num_classes = 1
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # if y_true[0].max() > 1:
     #     y_true = (y_true > 127.5).astype(np.uint8)
 
-    data_gen = Task2DataGenerator(attribute_names=['pigment_network'])
+    data_gen = Task2DataGenerator(attribute_names=['pigment_network'], target_size=512)
 
     model = backbone(backbone_name).segmentation_model(load_from=run_name)
     model.compile(optimizer='adam',
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # y_true = y_true[:max_num_images]
     max_num_images = 32
     count = 0
-    for x, y_true in data_gen.flow(target_size=1024, batch_size=1, subset='validation'):
+    for x, y_true in data_gen.flow(batch_size=1, subset='validation'):
         if count >= max_num_images:
             break
 
