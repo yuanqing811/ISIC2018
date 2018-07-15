@@ -91,11 +91,11 @@ Set:
 
 The solution uses transfer learning from one the pretrained models such as vgg16 etc.  The default network that trains ok is inception_v3.  Run the script runs/cls_train.py to train.
 
+Set num_folds to 5 if you want to do 5 fold training. Set it to 1 if you want to use a single fold.
+
 ##### Task 3 results
 
 Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_eval.py.
-
-Set num_folds to 5 if you want to do 5 fold training. Set it to 1 if you want to use a single fold.
 
 The result below is based on training a single InceptionV3 model for 30 epochs, and is based on roughly 2000 validation images.
 
