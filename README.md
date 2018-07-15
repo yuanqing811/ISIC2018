@@ -5,12 +5,16 @@ https://challenge2018.isic-archive.com/
 
 ## Summary
 
-This repository provides a starting solution for ISIC-2018 challenge based on Keras/Tensorflow. The current achieved performance is:
+**Update: July 15, 2018 to include k-fold validation and validation/test prediction and submission.**
 
-| Task 1        | Task 2           | Task 3  |
-| ------------- |:-------------:| -----:|
-| 81.5% mean Jaccard      | W.I.P. | 83 % accuracy |
-| 77.2% thresholded Jaccard      |       |  68.5% mean recall |
+This repository provides a starting solution for Task 1 and Task 3 of ISIC-2018 challenge based on Keras/Tensorflow. 
+
+The current achieved performance is:
+
+| Task 1        | Task 3  |
+| ------------- | -----:|
+| 81.5% mean Jaccard      | 83 % accuracy |
+| 77.2% thresholded Jaccard  |  68.5% mean recall |
 
 We support most of the backbones supported by Keras (Inception, Densenet, VGG etc.). For the segementation problems, we additionally support using Keras pre-trained backbones in a U-Net type structure. 
 
@@ -32,16 +36,19 @@ Please make sure that your project directory is in your PYTHONPATH.
 Place the unzipped ISIC 2018 data in folders datasets/ISIC2018/data. This folder should have the following subfolders:
 
 * ISIC2018_Task1-2_Training_Input
+* ISIC2018_Task1-2_Validation_Input
+* ISIC2018_Task1-2_Test_Input
 * ISIC2018_Task1_Training_GroundTruth
-* ISIC2018_Task2_Training_GroundTruth_v3
 * ISIC2018_Task3_Training_GroundTruth
+    * Include ISIC2018_Task3_Training_LesionGroupings.csv file. See [here](https://forum.isic-archive.com/t/task-3-supplemental-information/430) and [here](https://challenge.kitware.com/api/v1/file/5b0858b456357d4ff8575164/download)
 * ISIC2018_Task3_Training_Input
-
-**Place the lesion ID file ISIC2018_Task3_Training_LesionGroupings.csv inside the folder ISIC2018_Task3_Training_GroundTruth.** For details about lesion ID, please see the thread [here](https://forum.isic-archive.com/t/task-3-supplemental-information/430) and the actual CSV file [here](https://challenge.kitware.com/api/v1/file/5b0858b456357d4ff8575164/download)
+* ISIC2018_Task3_Validation_Input
+* ISIC2018_Task3_Test_Input
 
 ### Data pre-processing
 
-We resize all the images to 224x224x3 size and store them in numpy file for ease/speed of processing. You can run datasets/ISIC2018/preprocess_data.py to do the pre-processing, or it will be done the first time you call a function that needs the pre-processed data. **This can take a few hours to complete.**
+We resize all the images to 224x224x3 size and store them in numpy file for ease/speed of processing. 
+You can run datasets/ISIC2018/preprocess_data.py to do the pre-processing, or it will be done the first time you call a function that needs the pre-processed data. **This can take a few hours to complete.**
 
 ## Data visualization
 
@@ -51,10 +58,6 @@ You can visualize the data by running misc_utils/visualization_utils.py. You sho
 
 <img src="images/task1_input.png" alt="task1 input" style="width:100px;"/>
 
-### Task 2 image
-
-<img src="images/task2_input.png" alt="task2 input" style="width:100px;"/>
-
 ## Training/Prediction
 
 ### Task 1 (Segmentation)
@@ -62,6 +65,8 @@ You can visualize the data by running misc_utils/visualization_utils.py. You sho
 #### Solution
 
 The solution uses an encoder and a decoder in a U-NET type structure. The encoder can be one the pretrained models such as vgg16 etc. The default network that trains ok is vgg16.  Run the script runs/seg_train.py to train.
+
+Set num_folds to 5 if you want to do 5 fold training. Set it to 1 if you want to use a single fold.
 
 #### Task 1 results
 
@@ -71,11 +76,14 @@ Run the script runs/seg_eval.py to evaluate the network. We get the following on
 
 <img src="images/task1_results.png" alt="task3 results" style="width:100px;"/>
 
-### Task 2 (Feature Segmentation)
+##### Task 1 prediction
 
-##### Work in progress -- no stable results yet
+Run runs/cls_predict.py to make predictions on validation and test set and generate submission. Submission will be in directory submissions.
 
-Changing task_idx in runs/seg_train.py to 2 should start training for task 2. However, we have not be able to get stable results so far.
+Set:
+* num_folds to 5 if you have done 5 fold training. Set it to 1 if you are using a single fold.
+* Set TTA = False if you do not want to use test time augmentation (which uses rotations of the image and averages predictions)
+* Set pred_set = 'test' for test set and set it 'validation' for validation set
 
 ### Task 3 (Classification)
 
@@ -85,9 +93,9 @@ The solution uses transfer learning from one the pretrained models such as vgg16
 
 ##### Task 3 results
 
-**Update - lesion ID based training/validation split has been added. This reduces the balanced accuracy to 68.5% from  76%.**
-
 Run the script runs/cls_eval.py. Make sure the configuration matches the one used in runs/cls_eval.py.
+
+Set num_folds to 5 if you want to do 5 fold training. Set it to 1 if you want to use a single fold.
 
 The result below is based on training a single InceptionV3 model for 30 epochs, and is based on roughly 2000 validation images.
 
@@ -115,6 +123,16 @@ The result below is based on training a single InceptionV3 model for 30 epochs, 
 Correct predictions are in **green** and wrong predictions are in **red**.
 
 <img src="images/task3_results.png" alt="task3 results" style="width:100px;"/>
+
+##### Task 3 prediction
+
+Run runs/cls_predict.py to make predictions on validation and test set and generate submission. Submission will be in directory submissions.
+
+Set:
+* num_folds to 5 if you have done 5 fold training. Set it to 1 if you are using a single fold.
+* Set TTA = False if you do not want to use test time augmentation (which uses rotations of the image and averages predictions)
+* Set pred_set = 'test' for test set and set it 'validation' for validation set
+
 
 ## Miscellaneous
 

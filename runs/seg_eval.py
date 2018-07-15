@@ -9,7 +9,7 @@ from skimage.morphology import label as sk_label
 
 def task1_post_process(y_prediction, threshold=0.5, gauss_sigma=0.):
 
-    for im_index in range(y_pred.shape[0]):
+    for im_index in range(y_prediction.shape[0]):
 
         # smooth image by Gaussian filtering
 
