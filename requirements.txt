@@ -65,5 +65,5 @@ toolz==0.9.0
 tornado==4.5.3
 tqdm==4.23.0
 urllib3==1.22
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 zict==0.1.3
