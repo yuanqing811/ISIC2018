@@ -38,7 +38,7 @@ opencv-python==3.4.1.15
 packaging==17.1
 pandas==0.22.0
 partd==0.3.8
-Pillow==5.1.0
+Pillow==6.2.0
 protobuf==3.5.2.post1
 psutil==5.4.5
 pycparser==2.18
