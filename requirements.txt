@@ -22,7 +22,7 @@ heapdict==1.0.0
 html5lib==0.9999999
 idna==2.6
 imageio==2.3.0
-Jinja2==2.10
+Jinja2==2.11.3
 Keras==2.1.6
 kiwisolver==1.0.1
 locket==0.2.0
