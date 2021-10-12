@@ -34,7 +34,7 @@ msgpack-python==0.5.6
 networkx==1.11
 numpy==1.14.3
 olefile==0.45.1
-opencv-python==3.4.1.15
+opencv-python==4.2.0.32
 packaging==17.1
 pandas==0.22.0
 partd==0.3.8
