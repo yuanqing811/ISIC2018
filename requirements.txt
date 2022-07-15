@@ -14,7 +14,7 @@ Cython==0.28.2
 cytoolz==0.9.0.1
 dask==0.17.2
 decorator==4.3.0
-distributed==1.21.6
+distributed==2021.10.0
 gast==0.2.0
 grpcio==1.11.0
 h5py==2.7.1
