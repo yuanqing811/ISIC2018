@@ -3,7 +3,7 @@ asn1crypto==0.24.0
 astor==0.6.2
 bleach==1.5.0
 bokeh==0.12.15
-certifi==2018.4.16
+certifi==2022.12.7
 cffi==1.11.4
 chardet==3.0.4
 click==6.7
